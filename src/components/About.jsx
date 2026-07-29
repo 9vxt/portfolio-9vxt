@@ -24,15 +24,6 @@ const domains = [
 export default function About() {
   const [ref, visible] = useOnScreen(0.1)
 
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.08 } },
-  }
-  const item = {
-    hidden: { opacity: 0, y: 16 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  }
-
   return (
     <section id="about" className="py-28 bg-[#080c14] border-t border-[#1e293b]">
       <div ref={ref} className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

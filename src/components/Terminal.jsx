@@ -80,6 +80,7 @@ const commands = {
   neofetch   — Fun system info
   sudo       42    mit    wasm   — Easter eggs
   clear      — Clear terminal
+  exit       — Close this tab
   help       — Show this message`,
     type: 'help'
   }),
@@ -93,6 +94,7 @@ const commands = {
   date: () => ({ text: new Date().toString(), type: 'output' }),
   banner: () => ({ text: BANNER, type: 'banner' }),
   clear: () => null,
+  exit: () => { window.open('', '_self'); window.close(); return { text: 'Closing window...', type: 'system' } },
   sudo: () => ({ text: easterEggs.sudo, type: 'easteregg' }),
   neofetch: () => ({ text: easterEggs.neofetch, type: 'easteregg' }),
   '42': () => ({ text: easterEggs['42'], type: 'easteregg' }),

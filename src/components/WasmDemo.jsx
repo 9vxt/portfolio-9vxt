@@ -1,6 +1,56 @@
 import { useState, useEffect } from 'react'
 import useOnScreen from '../hooks/useOnScreen'
 
+const CppSource = `extern "C" {
+
+float heightmap[196608];
+
+static float hash(int x, int y) {
+  int n = x + y * 57;
+  n = (n << 13) ^ n;
+  return 1.0 - ((n*(n*n*15731+789221)+1376312589)&0x7fffffff)/1073741824.0;
+}
+
+static float fbm(float x, float y) {
+  float v=0, a=1, f=1;
+  for (int i=0; i<6; i++) { v += a * smooth(x*f, y*f); f*=2.1f; a*=0.48f; }
+  return v;
+}
+
+void gen_terrain(int w, int h, float t, float s) {
+  for (int y=0; y<h; y++)
+    for (int x=0; x<w; x++)
+      heightmap[y*w+x] = fbm(x/w*s+t*0.08f, y/h*s+t*0.06f)*2-1;
+}
+
+float* get_heightmap() { return heightmap; }
+
+int fib(int n) {
+  int a=0, b=1;
+  for (int i=2; i<=n; i++) { int c=a+b; a=b; b=c; }
+  return b;
+}
+
+int is_prime(int n) {
+  if (n<2) return 0;
+  for (int i=3; i*i<=n; i+=2) if (n%i==0) return 0;
+  return 1;
+}
+
+int count_primes(int n) {
+  int c=0;
+  for (int i=2; i<=n; i++) { int p=1;
+    for (int j=2; j*j<=i; j++) { if (i%j==0) { p=0; break; } } if (p) c++; }
+  return c;
+}
+
+int factorial(int n) {
+  int r=1;
+  for (int i=2; i<=n; i++) r*=i;
+  return r;
+}
+}`
+
 let wasm = null
 async function load() {
   if (wasm) return wasm
@@ -42,6 +92,7 @@ export default function WasmDemo() {
   const [loading, setLoading] = useState(false)
   const [log, setLog] = useState('')
   const [ready, setReady] = useState(false)
+  const [showSource, setShowSource] = useState(false)
 
   useEffect(() => { load().then(() => setReady(true)) }, [])
 
@@ -120,6 +171,20 @@ export default function WasmDemo() {
             </div>
           )}
         </div>
+
+        <button onClick={() => setShowSource(!showSource)}
+          className="mt-4 w-full py-2 px-4 eng-card text-xs font-mono text-[#64748b] hover:text-[#3b82f6] hover:border-[#3b82f6]/50 transition-all text-center">
+          <span className="text-[#475569]">$</span> {showSource ? 'hide' : 'view'} source — wasm/portfolio.cpp <span className="text-[#475569]">(68 lines)</span>
+        </button>
+        {showSource && (
+          <div className="mt-3 eng-card p-4 overflow-auto" style={{ maxHeight: 400 }}>
+            <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#1e293b]">
+              <span className="text-[10px] text-[#22d3ee] font-mono">wasm/portfolio.cpp</span>
+              <span className="ml-auto text-[9px] text-[#475569] font-mono">clang --target=wasm32 -O3 -nostdlib -Wl,--no-entry -Wl,--export-all</span>
+            </div>
+            <pre className="text-[11px] font-mono text-[#94a3b8] whitespace-pre-wrap leading-relaxed">{CppSource}</pre>
+          </div>
+        )}
       </div>
     </section>
   )

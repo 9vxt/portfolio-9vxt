@@ -1,30 +1,33 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { motion } from 'framer-motion'
 import Scene3D from './Scene3D'
 import Terminal from './Terminal'
 
-function MatrixRain() {
+function MatrixRain({ active }) {
   const canvasRef = useRef()
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
+    let id
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
     const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン01'
     const fontSize = 10
     const cols = Math.floor(canvas.width / fontSize)
-    const drops = Array(cols).fill(1).map(() => Math.random() * canvas.height)
-    let id
+    const drops = Array.from({ length: cols }, () => Math.random() * canvas.height)
+
     const draw = () => {
+      if (!active) { id = requestAnimationFrame(draw); return }
       ctx.fillStyle = 'rgba(8, 12, 20, 0.05)'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = '#3b82f6'
       ctx.font = `${fontSize}px monospace`
       for (let i = 0; i < drops.length; i++) {
+        if (i % 3 !== 0) continue // skip 2/3 columns when not fully visible
+        if (drops[i] - 10 > canvas.height / fontSize && Math.random() > 0.98) { drops[i] = 0; continue }
         const char = chars[Math.floor(Math.random() * chars.length)]
         ctx.fillStyle = Math.random() > 0.97 ? '#f1f5f9' : '#3b82f6'
-        ctx.globalAlpha = 0.3
+        ctx.globalAlpha = 0.2
         ctx.fillText(char, i * fontSize, drops[i] * fontSize)
         ctx.globalAlpha = 1
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0
@@ -36,19 +39,34 @@ function MatrixRain() {
     const onResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
     window.addEventListener('resize', onResize)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', onResize) }
-  }, [])
-  return <canvas ref={canvasRef} className="absolute inset-0 opacity-15 pointer-events-none" />
+  }, [active])
+  return <canvas ref={canvasRef} className="absolute inset-0 opacity-10 pointer-events-none" />
+}
+
+function useIsVisible(ref) {
+  const [visible, setVisible] = useState(true)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [ref])
+  return visible
 }
 
 export default function Hero() {
+  const sectionRef = useRef()
+  const visible = useIsVisible(sectionRef)
+
   return (
-    <section id="hero" className="relative min-h-screen w-full overflow-hidden circuit-bg pt-14">
+    <section id="hero" ref={sectionRef} className="relative min-h-screen w-full overflow-hidden circuit-bg pt-14">
       <div className="absolute inset-0 bg-gradient-to-b from-[#3b82f6]/5 via-transparent to-[#080c14]/90 pointer-events-none z-[1]" />
-      <MatrixRain />
+      <MatrixRain active={visible} />
 
       <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} fallback={<div className="w-full h-full bg-[#080c14]" />}>
-          <Scene3D />
+        <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop={visible ? 'always' : 'never'} fallback={<div className="w-full h-full bg-[#080c14]" />}>
+          <Scene3D active={visible} />
         </Canvas>
       </div>
 
@@ -72,7 +90,7 @@ export default function Hero() {
 
           <p className="text-xs sm:text-sm text-[#94a3b8] font-mono max-w-xl mx-auto leading-relaxed">
             <span className="text-[#475569]">#include</span>{' '}
-            <span className="text-[#22d3ee">&lt;engineer&gt;</span>{' '}
+            <span className="text-[#22d3ee]">&lt;engineer&gt;</span>{' '}
             <span className="text-[#64748b]">|</span>{' '}
             <span className="text-[#34d399]">C++</span>
             <span className="text-[#475569]"> · </span>
@@ -81,6 +99,8 @@ export default function Hero() {
             <span className="text-[#34d399]">Python</span>
             <span className="text-[#475569]"> · </span>
             <span className="text-[#3b82f6]">WASM</span>
+            <span className="text-[#475569]"> · </span>
+            <span className="text-[#22d3ee]">WebGPU</span>
           </p>
 
           <div className="flex justify-center gap-3 mt-4 flex-wrap">
