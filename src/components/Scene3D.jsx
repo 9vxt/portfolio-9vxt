@@ -216,6 +216,127 @@ const COLORS = ['#3b82f6', '#22d3ee', '#8b5cf6', '#34d399', '#f59e0b']
 const SOLID_P = [new THREE.Vector3(1.6, 2.2, -0.8), new THREE.Vector3(-2.4, -0.8, -1.6), new THREE.Vector3(0.8, -2.4, -1.0)]
 const SOLID_G = [new THREE.IcosahedronGeometry(0.25), new THREE.OctahedronGeometry(0.2), new THREE.DodecahedronGeometry(0.2)]
 
+function OrbitingShapes() {
+  const groupRef = useRef()
+  const items = useMemo(() => {
+    const geoTypes = [
+      () => new THREE.TorusKnotGeometry(0.08, 0.03, 12, 6),
+      () => new THREE.IcosahedronGeometry(0.07),
+      () => new THREE.OctahedronGeometry(0.07),
+      () => new THREE.TetrahedronGeometry(0.07),
+      () => new THREE.DodecahedronGeometry(0.06),
+      () => new THREE.TorusGeometry(0.08, 0.03, 8, 12),
+    ]
+    const arr = []
+    for (let i = 0; i < 28; i++) {
+      const th = (i / 28) * Math.PI * 2
+      const r = 2.2 + Math.sin(i * 0.7) * 0.6
+      arr.push({
+        base: new THREE.Vector3(Math.cos(th) * r, Math.sin(th * 1.3 + i * 0.2) * 1.2, Math.sin(th) * r * 0.6),
+        geo: geoTypes[i % geoTypes.length](),
+        color: COLORS[i % COLORS.length],
+        speed: 0.25 + Math.random() * 0.35,
+        off: Math.random() * Math.PI * 2,
+        phase: Math.random() * Math.PI * 2,
+      })
+    }
+    return arr
+  }, [])
+  useFrame((st) => {
+    if (frame % 2 !== 0) return
+    const mx = window._mouseX || 0; const my = window._mouseY || 0
+    if (!groupRef.current) return
+    groupRef.current.children.forEach((child, i) => {
+      const item = items[i]
+      const t = st.clock.elapsedTime * item.speed
+      child.position.x = item.base.x + mx * 0.6 + Math.sin(t + item.off) * 0.15
+      child.position.y = item.base.y + my * 0.6 + Math.cos(t * 0.7 + item.off) * 0.15
+      child.position.z = item.base.z + Math.sin(t * 0.5 + item.phase) * 0.12
+      child.rotation.x += 0.008 * item.speed
+      child.rotation.y += 0.012 * item.speed
+    })
+  })
+  return (
+    <group ref={groupRef}>
+      {items.map((item, i) => (
+        <mesh key={i}>
+          <primitive object={item.geo} />
+          <meshPhysicalMaterial color={item.color} emissive={item.color} emissiveIntensity={0.1} transparent opacity={0.2} metalness={0.4} roughness={0.3} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function HelixTube() {
+  const ref = useRef()
+  const count = 160
+  const positions = useMemo(() => {
+    const pts = new Float32Array(count * 3)
+    const cols = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const t = (i / count) * Math.PI * 5
+      const r = 1.3 + Math.sin(t * 0.3) * 0.15
+      pts[i*3] = Math.cos(t) * r
+      pts[i*3+1] = (i / count - 0.5) * 3.0
+      pts[i*3+2] = Math.sin(t) * r
+      cols[i*3] = 0.23 + Math.sin(t) * 0.1; cols[i*3+1] = 0.5 + Math.cos(t * 0.7) * 0.15; cols[i*3+2] = 0.9 + Math.sin(t * 0.5) * 0.1
+    }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(pts, 3))
+    g.setAttribute('color', new THREE.BufferAttribute(cols, 3))
+    return g
+  }, [])
+  useFrame(() => {
+    if (frame % 2 !== 0) return
+    const mx = window._mouseX || 0; const my = window._mouseY || 0
+    if (!ref.current) return
+    ref.current.rotation.x = my * 0.3
+    ref.current.rotation.y += 0.004 + mx * 0.002
+  })
+  return (
+    <line ref={ref} position={[0, 0.3, -0.6]}>
+      <primitive object={positions} />
+      <lineBasicMaterial vertexColors transparent opacity={0.2} linewidth={2} />
+    </line>
+  )
+}
+
+function InteractiveStars() {
+  const ref = useRef()
+  const count = 120
+  const data = useMemo(() => {
+    const p = new Float32Array(count * 3); const s = new Float32Array(count); const c = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      const th = Math.random() * Math.PI * 2; const ph = Math.acos(2 * Math.random() - 1)
+      const r = 1.5 + Math.random() * 3.0
+      p[i*3] = r * Math.sin(ph) * Math.cos(th); p[i*3+1] = r * Math.sin(ph) * Math.sin(th); p[i*3+2] = r * Math.cos(ph)
+      s[i] = 0.015 + Math.random() * 0.035
+      c[i*3] = 0.2 + Math.random() * 0.3; c[i*3+1] = 0.5 + Math.random() * 0.4; c[i*3+2] = 0.8 + Math.random() * 0.2
+    }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(p, 3))
+    g.setAttribute('size', new THREE.BufferAttribute(s, 1))
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3))
+    return g
+  }, [])
+  useFrame(() => {
+    if (frame % 3 !== 0) return
+    const mx = window._mouseX || 0; const my = window._mouseY || 0
+    if (!ref.current) return
+    ref.current.rotation.y = mx * 0.4
+    ref.current.rotation.x = my * 0.25
+    ref.current.position.y = 0.2 + my * 0.2
+  })
+  return (
+    <points ref={ref}>
+      <primitive object={data} />
+      <pointsMaterial size={0.04} vertexColors transparent opacity={0.35} sizeAttenuation blending={THREE.AdditiveBlending} />
+    </points>
+  )
+}
+
+
 export default function Scene3D({ scrollP = 0 }) {
   useEffect(() => {
     window._mouseX = 0; window._mouseY = 0
@@ -234,6 +355,9 @@ export default function Scene3D({ scrollP = 0 }) {
       <IcosahedronShader scrollP={scrollP} />
       <Rings scrollP={scrollP} />
       <TorusSpiral scrollP={scrollP} />
+      <HelixTube />
+      <OrbitingShapes />
+      <InteractiveStars />
       <WasmTerrain scrollP={scrollP} />
       {GEOMS.map((g, i) => (<FloatGeo key={i} geom={g} pos={POS[i]} color={COLORS[i % COLORS.length]} speed={0.7 + i * 0.1} mf={0.4 + i * 0.07} scrollP={scrollP} />))}
       {SOLID_G.map((g, i) => (<FloatGeo key={`s${i}`} geom={g} pos={SOLID_P[i]} color={COLORS[i + 1]} speed={0.5 + i * 0.1} mf={0.3} wire={false} scrollP={scrollP} />))}

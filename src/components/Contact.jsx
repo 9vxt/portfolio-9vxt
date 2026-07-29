@@ -6,6 +6,7 @@ const socials = [
   { label: 'Instagram', user: '@9vxt_fr', href: 'https://www.instagram.com/9vxt_fr/' },
   { label: 'LinkedIn', user: 'Athibordee Thongboonma', href: 'https://www.linkedin.com/in/athibordee-thongboonma-879194426/' },
   { label: 'Spotify', user: '9vxt', href: 'https://open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq' },
+  { label: 'LINE', user: 'qwertyuiop0246', href: 'https://line.me/ti/p/~qwertyuiop0246' },
 ]
 
 export default function Contact() {

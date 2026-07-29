@@ -14,10 +14,9 @@ const techs = [
 ]
 
 const projects = [
-  { name: 'ZetaDB', desc: 'Embedded KV store. LSM-tree, WAL, ACID, 50k writes/sec.', color: '#22d3ee' },
-  { name: 'CypherVM', desc: 'Stack VM with LLVM JIT. Custom bytecode, register alloc.', color: '#8b5cf6' },
-  { name: 'PyTorch', desc: 'GPU ray tracer. BVH, PBR, CUDA kernels.', color: '#f59e0b' },
-  { name: 'AetherOS', desc: 'x86-64 kernel. Bootloader, paging, interrupts, FAT32.', color: '#34d399' },
+  { name: 'ESP32-S3 Calculator', desc: 'Embedded calculator with dual-core ESP32-S3, Chorded Input System, Hybrid CAS/Non-CAS engine.', color: '#22d3ee' },
+  { name: 'Rucyd OS', desc: 'Linux NoMMU framework (<2MB) with Software-Defined Memory Validation & Gatekeeper API.', color: '#8b5cf6' },
+  { name: 'Guitar Multi-Effect', desc: 'R&D phase — real-time DSP audio processing on ESP32-S3 with low-latency I2S.', color: '#f59e0b' },
 ]
 
 export default function ShowcaseWall() {
@@ -72,7 +71,7 @@ export default function ShowcaseWall() {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <p className="text-xs text-[#64748b] font-mono mb-3 text-center tracking-widest"><span className="text-[#34d399]">//</span> featured_projects</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl mx-auto">
             {projects.map((p, i) => (
               <motion.div
                 key={p.name}
