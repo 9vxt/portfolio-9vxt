@@ -24,6 +24,9 @@ export default function WasmTerrain({ scrollP = 0 }) {
     const g = new THREE.PlaneGeometry(7, 5, W - 1, H - 1)
     g.rotateX(-Math.PI / 2)
     const colors = new Float32Array(g.attributes.position.count * 3)
+    for (let i = 0; i < colors.length; i += 3) {
+      colors[i] = 0.46; colors[i + 1] = 0.40; colors[i + 2] = 0.06
+    }
     g.setAttribute('color', new THREE.BufferAttribute(colors, 3))
     return g
   }, [])
@@ -35,6 +38,7 @@ export default function WasmTerrain({ scrollP = 0 }) {
   }, [])
 
   function updateColors(pos, colors) {
+    const arr = colors.array
     for (let i = 0; i < pos.count; i++) {
       const y = Math.floor(i / W), x = i % W
       const h = cache[y * W + x] * 0.5
@@ -55,7 +59,7 @@ export default function WasmTerrain({ scrollP = 0 }) {
         const t = (nh - 0.75) / 0.25
         r = 0.43 + t * 0.42; g = 0.47 + t * 0.38; b = 0.17 + t * 0.63
       }
-      colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b
+      arr[i * 3] = r; arr[i * 3 + 1] = g; arr[i * 3 + 2] = b
     }
     colors.needsUpdate = true
   }
