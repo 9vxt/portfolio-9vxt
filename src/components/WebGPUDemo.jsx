@@ -19,7 +19,7 @@ struct SimParams { scale: f32, aspect: f32, _pad: vec2<f32> }
 @group(0) @binding(0) var<storage, read> planets: array<PlanetData>;
 @group(0) @binding(1) var<uniform> sim: SimParams;
 
-struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> }
+struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32>, @location(1) uv: vec2f }
 
 @vertex
 fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
@@ -33,12 +33,16 @@ fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) ->
   var out: VOut;
   out.pos = vec4(world.x + corner.x * rad, world.y + corner.y * rad * sim.aspect, 0.0, 1.0);
   out.col = p.color;
+  out.uv = corner;
   return out;
 }
 
 @fragment
-fn fragMain(@location(0) col: vec3<f32>) -> @location(0) vec4<f32> {
-  return vec4(col, 0.8);
+fn fragMain(@location(0) col: vec3<f32>, @location(1) uv: vec2f) -> @location(0) vec4<f32> {
+  let d = length(uv);
+  if (d > 1.0) { discard; }
+  let a = 1.0 - smoothstep(0.85, 1.0, d);
+  return vec4(col, a * 0.8);
 }
 `
 
