@@ -14,14 +14,15 @@ async function loadWasm() {
   return wasm
 }
 
+// WGSL: 48-byte PlanetData (12 floats stride) matches C++ PlanetGPUData
 const planetWGSL = `
-struct PlanetData { pos: vec2<f32>, radius: f32, _pad: f32, color: vec3<f32>, _pad2: f32 }
+struct PlanetData { pos: vec2f, _vel: vec2f, mass: f32, radius: f32, _pad: vec2f, color: vec3f, _pad2: f32 }
 struct SimParams { scale: f32, aspect: f32, time: f32, _pad: f32 }
 
 @group(0) @binding(0) var<storage, read> planets: array<PlanetData>;
 @group(0) @binding(1) var<uniform> sim: SimParams;
 
-struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32>, @location(1) uv: vec2f }
+struct VOut { @builtin(position) pos: vec4f, @location(0) col: vec3f, @location(1) uv: vec2f }
 
 @vertex
 fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
@@ -31,33 +32,33 @@ fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) ->
   let world = p.pos * sim.scale;
   let rad = p.radius * sim.scale;
   var out: VOut;
-  out.pos = vec4(world.x + corner.x * rad, world.y + corner.y * rad * sim.aspect, 0.0, 1.0);
+  out.pos = vec4f(world.x + corner.x * rad, world.y + corner.y * rad * sim.aspect, 0.0, 1.0);
   out.col = p.color;
   out.uv = corner;
   return out;
 }
 
 @fragment
-fn fragMain(@location(0) col: vec3<f32>, @location(1) uv: vec2f, @builtin(instance_index) ii: u32) -> @location(0) vec4<f32> {
+fn fragMain(@location(0) col: vec3f, @location(1) uv: vec2f, @builtin(instance_index) ii: u32) -> @location(0) vec4f {
   let d = length(uv);
   let a = 1.0 - smoothstep(0.85, 1.0, d);
   if (d > 1.0) { discard; }
   if (ii == 0u) {
     let glow = exp(-d * d * 3.0) * 0.6;
-    return vec4(col * (1.0 + glow), a * 0.8 + glow * 0.5);
+    return vec4f(col * (1.0 + glow), a * 0.8 + glow * 0.5);
   }
-  return vec4(col, a * 0.8);
+  return vec4f(col, a * 0.8);
 }
 `
 
 const trailWGSL = `
 struct SimParams { scale: f32, aspect: f32, time: f32, _pad: f32 }
-struct TrailPoint { pos: vec2<f32>, age: f32, _pad: f32, col: vec3<f32>, _pad2: f32 }
+struct TrailPoint { pos: vec2f, age: f32, _pad: f32, col: vec3f, _pad2: f32 }
 
 @group(0) @binding(0) var<storage, read> trail: array<TrailPoint>;
 @group(0) @binding(1) var<uniform> sim: SimParams;
 
-struct TOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec4<f32> }
+struct TOut { @builtin(position) pos: vec4f, @location(0) col: vec4f }
 
 const TRAIL_LEN = ${TRAIL_LEN}u;
 
@@ -66,13 +67,13 @@ fn trailVert(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
   let tp = trail[ii * TRAIL_LEN + vi];
   let world = tp.pos * sim.scale;
   var out: TOut;
-  out.pos = vec4(world.x, world.y * sim.aspect, 0.0, 1.0);
-  out.col = vec4(tp.col * tp.age, tp.age * 0.5);
+  out.pos = vec4f(world.x, world.y * sim.aspect, 0.0, 1.0);
+  out.col = vec4f(tp.col * tp.age, tp.age * 0.5);
   return out;
 }
 
 @fragment
-fn trailFrag(@location(0) col: vec4<f32>) -> @location(0) vec4<f32> {
+fn trailFrag(@location(0) col: vec4f) -> @location(0) vec4f {
   return col;
 }
 `
@@ -80,19 +81,19 @@ fn trailFrag(@location(0) col: vec4<f32>) -> @location(0) vec4<f32> {
 const bgWGSL = `
 @group(0) @binding(0) var<uniform> time: f32;
 
-struct BgOut { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2f }
+struct BgOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f }
 
 @vertex
 fn bgVert(@builtin(vertex_index) vi: u32) -> BgOut {
   let pos = vec2f(f32(vi >> 1u) * 4.0 - 1.0, f32((vi & 1u) ^ 1u) * 4.0 - 1.0);
   var out: BgOut;
-  out.pos = vec4(pos, 0.0, 1.0);
+  out.pos = vec4f(pos, 0.0, 1.0);
   out.uv = pos * 0.5 + 0.5;
   return out;
 }
 
 @fragment
-fn bgFrag(@location(0) uv: vec2f) -> @location(0) vec4<f32> {
+fn bgFrag(@location(0) uv: vec2f) -> @location(0) vec4f {
   let p = vec2u(uv * vec2f(512.0, 320.0));
   let h = (p.x * 1973u + p.y * 9277u) ^ 12345u;
   let star = f32(h % 10000u) / 10000.0;
@@ -102,34 +103,48 @@ fn bgFrag(@location(0) uv: vec2f) -> @location(0) vec4<f32> {
   let center = length(uv - 0.5);
   let sunGlow = exp(-center * center * 8.0) * 0.04;
   let col = vec3f(0.004 + nebula + sunGlow) + vec3f(starBright);
-  return vec4(col, 1.0);
+  return vec4f(col, 1.0);
 }
 `
 
 async function initSolarGPU(canvas, maxPlanets) {
-  if (!navigator.gpu) throw new Error('no WebGPU')
+  if (!navigator.gpu) {
+    console.error('WebGPU not available')
+    throw new Error('no WebGPU')
+  }
   const adapter = await navigator.gpu.requestAdapter()
-  if (!adapter) throw new Error('no adapter')
+  if (!adapter) {
+    console.error('No WebGPU adapter found')
+    throw new Error('no adapter')
+  }
   const device = await adapter.requestDevice()
   const ctx = canvas.getContext('webgpu')
   ctx.configure({ device, format: 'bgra8unorm', alphaMode: 'premultiplied' })
+  console.log('WebGPU initialized')
 
   const scale = 1.0 / 4.0
   const aspect = canvas.width / canvas.height
 
-  // --- Buffers ---
+  // --- Planet buffer (maxPlanets * 48 = maxPlanets * 12 floats * 4) ---
   const planetBuf = device.createBuffer({
-    size: maxPlanets * 8 * 4,
+    size: maxPlanets * 12 * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   })
+
+  // --- Shared SimParams uniform (scale, aspect, time, pad = 16 bytes) ---
   const simBuf = device.createBuffer({
     size: 16,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
+
+  // --- Background time uniform ---
   const bgTimeBuf = device.createBuffer({
     size: 4,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
+
+  // --- Trail buffer (maxPlanets * TRAIL_LEN * 32 bytes each) ---
+  const trailStage = new Float32Array(maxPlanets * TRAIL_LEN * 8)
   const trailBuf = device.createBuffer({
     size: maxPlanets * TRAIL_LEN * 8 * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -199,10 +214,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     ],
   })
 
-  // --- Staging data ---
-  const planetStage = new Float32Array(maxPlanets * 8)
-  const simStage = new Float32Array(4)
-  const trailStage = new Float32Array(maxPlanets * TRAIL_LEN * 8)
+  // --- Trail ring buffer (JS-managed) ---
   const trailXY = new Float32Array(maxPlanets * TRAIL_LEN * 2)
   const trailHEAD = new Uint32Array(maxPlanets)
   const trailCNT = new Uint32Array(maxPlanets)
@@ -222,31 +234,24 @@ async function initSolarGPU(canvas, maxPlanets) {
     w.step_solar(dt)
     const cnt = w.planet_count()
 
-    // --- Write planet data ---
-    planetStage.fill(0)
-    for (let i = 0; i < cnt && i < maxPlanets; i++) {
-      planetStage[i * 8] = w.planet_x(i)
-      planetStage[i * 8 + 1] = w.planet_y(i)
-      planetStage[i * 8 + 2] = w.planet_radius(i)
-      planetStage[i * 8 + 4] = w.planet_r(i)
-      planetStage[i * 8 + 5] = w.planet_g(i)
-      planetStage[i * 8 + 6] = w.planet_b(i)
-    }
-    device.queue.writeBuffer(planetBuf, 0, planetStage)
+    // --- Direct WASM memory → GPU buffer copy (48-byte stride) ---
+    const ptr = w.get_planets_ptr()
+    const src = new Float32Array(w.memory.buffer, ptr, cnt * 12)
+    device.queue.writeBuffer(planetBuf, 0, src)
 
     // --- Update trail ring buffers ---
-    for (let i = 0; i < cnt && i < maxPlanets; i++) {
+    for (let i = 0; i < cnt; i++) {
       const base = i * TRAIL_LEN * 2
       const head = trailHEAD[i]
-      trailXY[base + head * 2] = w.planet_x(i)
-      trailXY[base + head * 2 + 1] = w.planet_y(i)
+      trailXY[base + head * 2] = src[i * 12]
+      trailXY[base + head * 2 + 1] = src[i * 12 + 1]
       trailHEAD[i] = (head + 1) % TRAIL_LEN
       trailCNT[i] = Math.min(trailCNT[i] + 1, TRAIL_LEN)
     }
 
-    // --- Linearize trail data (oldest to newest) for GPU ---
+    // --- Linearize trail data ---
     trailStage.fill(0)
-    for (let i = 0; i < cnt && i < maxPlanets; i++) {
+    for (let i = 0; i < cnt; i++) {
       const hd = trailHEAD[i]
       const cc = trailCNT[i]
       for (let j = 0; j < TRAIL_LEN; j++) {
@@ -259,20 +264,19 @@ async function initSolarGPU(canvas, maxPlanets) {
           age = 0
         }
         const dst = (i * TRAIL_LEN + j) * 8
-        trailStage[dst] = trailXY[i * TRAIL_LEN * 2 + srcIdx * 2]
-        trailStage[dst + 1] = trailXY[i * TRAIL_LEN * 2 + srcIdx * 2 + 1]
+        const sx = i * TRAIL_LEN * 2 + srcIdx * 2
+        trailStage[dst] = trailXY[sx]
+        trailStage[dst + 1] = trailXY[sx + 1]
         trailStage[dst + 2] = age
-        trailStage[dst + 4] = w.planet_r(i)
-        trailStage[dst + 5] = w.planet_g(i)
-        trailStage[dst + 6] = w.planet_b(i)
+        trailStage[dst + 4] = src[i * 12 + 8]
+        trailStage[dst + 5] = src[i * 12 + 9]
+        trailStage[dst + 6] = src[i * 12 + 10]
       }
     }
     device.queue.writeBuffer(trailBuf, 0, trailStage)
 
     // --- Write uniforms ---
-    simStage[0] = scale
-    simStage[1] = aspect
-    simStage[2] = elapsed
+    const simStage = new Float32Array([scale, aspect, elapsed, 0])
     device.queue.writeBuffer(simBuf, 0, simStage)
     device.queue.writeBuffer(bgTimeBuf, 0, new Float32Array([elapsed]))
 
@@ -280,7 +284,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     const enc = device.createCommandEncoder()
     const tex = ctx.getCurrentTexture()
 
-    // Pass 1: Background
+    // Pass 1: Background (full-screen triangle → starfield + nebula)
     const bp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'clear', clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }],
     })
@@ -289,22 +293,22 @@ async function initSolarGPU(canvas, maxPlanets) {
     bp.draw(3, 1, 0, 0)
     bp.end()
 
-    // Pass 2: Trails
+    // Pass 2: Trails (line-strip, additive blend)
     const tp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
     tp.setPipeline(trailPipe)
     tp.setBindGroup(0, trailBG)
-    tp.draw(TRAIL_LEN, maxPlanets, 0, 0)
+    tp.draw(TRAIL_LEN, cnt, 0, 0)
     tp.end()
 
-    // Pass 3: Planets
+    // Pass 3: Planets (triangle-strip quads, SDF circle, sun bloom)
     const pp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
     pp.setPipeline(planetPipe)
     pp.setBindGroup(0, planetBG)
-    pp.draw(4, maxPlanets, 0, 0)
+    pp.draw(4, cnt, 0, 0)
     pp.end()
 
     device.queue.submit([enc.finish()])
@@ -322,16 +326,19 @@ export default function WebGPUDemo() {
   const [wasmReady, setWasmReady] = useState(false)
   const cleanupRef = useRef()
 
-  useEffect(() => { loadWasm().then(() => setWasmReady(true)) }, [])
+  useEffect(() => { loadWasm().then(() => setWasmReady(true)).catch(e => console.error('WASM load fail:', e)) }, [])
 
   useEffect(() => {
-    setSupported(!!navigator.gpu)
+    const gpuAvail = !!navigator.gpu
+    setSupported(gpuAvail)
     const canvas = canvasRef.current
     if (!canvas) return
-    if (navigator.gpu) {
+    if (gpuAvail) {
       initSolarGPU(canvas, 9)
         .then((c) => { cleanupRef.current = c; setError('') })
-        .catch((e) => { setError(e.message); setSupported(false) })
+        .catch((e) => { console.error('WebGPU init fail:', e.message); setError(e.message); setSupported(false) })
+    } else {
+      console.warn('WebGPU not available, using Canvas2D fallback')
     }
     return () => { if (cleanupRef.current) cleanupRef.current() }
   }, [])
@@ -351,29 +358,25 @@ export default function WebGPUDemo() {
       w.step_solar(Math.min((now - last) * 0.001, 0.02))
       last = now
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      // Background
       ctx.fillStyle = '#080c14'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-
       const cnt = w.planet_count()
-      // Sun glow
-      const sx = w.planet_x(0) * canvas.width / 8 + canvas.width / 2
-      const sy = w.planet_y(0) * canvas.height / 8 + canvas.height / 2
+      const ptr = w.get_planets_ptr()
+      const data = new Float32Array(w.memory.buffer, ptr, cnt * 12)
+      const sx = data[0] * canvas.width / 8 + canvas.width / 2
+      const sy = data[1] * canvas.height / 8 + canvas.height / 2
       const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 60)
       grad.addColorStop(0, 'rgba(255,200,50,0.12)')
       grad.addColorStop(1, 'rgba(255,200,50,0)')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      // Planets
       for (let i = 0; i < cnt; i++) {
-        const px = w.planet_x(i) * canvas.width / 8 + canvas.width / 2
-        const py = w.planet_y(i) * canvas.height / 8 + canvas.height / 2
-        const rad = Math.max(2, w.planet_radius(i) * canvas.width / 8)
+        const px = data[i * 12] * canvas.width / 8 + canvas.width / 2
+        const py = data[i * 12 + 1] * canvas.height / 8 + canvas.height / 2
+        const rad = Math.max(2, data[i * 12 + 5] * canvas.width / 8)
         ctx.beginPath()
         ctx.arc(px, py, rad, 0, Math.PI * 2)
-        ctx.fillStyle = `rgb(${w.planet_r(i)*255|0},${w.planet_g(i)*255|0},${w.planet_b(i)*255|0})`
+        ctx.fillStyle = `rgb(${data[i*12+8]*255|0},${data[i*12+9]*255|0},${data[i*12+10]*255|0})`
         ctx.fill()
         if (i === 0) {
           ctx.beginPath()
@@ -418,7 +421,7 @@ export default function WebGPUDemo() {
             <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Render: </span><span className="text-[#22d3ee]">WebGPU</span></div>
             <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Physics: </span><span className="text-[#34d399]">WASM (C++)</span></div>
             <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Bodies: </span><span className="text-[#f1f5f9]">9 (Sun + 8 planets)</span></div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">OOP: </span><span className="text-[#f59e0b]">Vec2+Planet+SolarSystem</span></div>
+            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">OOP: </span><span className="text-[#f59e0b]">Vec2+PlanetGPUData+SolarSystem</span></div>
           </div>
         </motion.div>
       </div>
