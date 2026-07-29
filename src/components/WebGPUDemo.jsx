@@ -24,10 +24,13 @@ struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32>, @l
 @vertex
 fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
   let p = planets[ii];
-  let corner = vec2<f32>(
-    select(-1.0, 1.0, vi == 1u || vi == 2u),
-    select(-1.0, 1.0, vi == 2u || vi == 3u),
+  let corners = array<vec2f, 4>(
+    vec2f(-1.0, -1.0),
+    vec2f( 1.0, -1.0),
+    vec2f(-1.0,  1.0),
+    vec2f( 1.0,  1.0),
   );
+  let corner = corners[vi];
   let world = p.pos * sim.scale;
   let rad = p.radius * sim.scale;
   var out: VOut;
