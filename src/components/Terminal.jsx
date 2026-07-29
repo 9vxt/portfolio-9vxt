@@ -136,7 +136,10 @@ export default function Terminal({ className = '' }) {
   const [cmdHistory, setCmdHistory] = useState([])
   const [histIdx, setHistIdx] = useState(-1)
   const inputRef = useRef(null)
-  const endRef = useRef(null)
+  const sentinelRef = useRef(null)
+
+  useEffect(() => { sentinelRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [history])
+  useEffect(() => { inputRef.current?.focus() }, [])
 
   const execute = useCallback((raw) => {
     const trimmed = raw.trim()
@@ -156,9 +159,6 @@ export default function Terminal({ className = '' }) {
 
     setHistory((prev) => [...prev, { text: trimmed, type: 'input' }, result])
   }, [])
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [history])
-  useEffect(() => { inputRef.current?.focus() }, [])
 
   const handleKey = (e) => {
     if (e.key === 'Enter') { execute(input); setInput('') }
@@ -209,8 +209,9 @@ export default function Terminal({ className = '' }) {
         <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
         <span className="text-xs text-[#475569] ml-2">athibordee@portfolio:~/terminal</span>
       </div>
-      <div className="p-4 h-56 sm:h-64 overflow-y-auto" ref={endRef}>
+      <div className="p-4 h-56 sm:h-64 overflow-y-auto">
         {history.map((line, i) => renderLine(line, i))}
+        <div ref={sentinelRef} />
         <div className="flex items-center mt-1">
           <span className="text-[#3b82f6] shrink-0 text-xs">athibordee</span>
           <span className="text-[#1e293b] shrink-0 text-xs">@</span>

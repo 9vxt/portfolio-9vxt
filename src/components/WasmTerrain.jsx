@@ -13,7 +13,7 @@ function getWorker() {
   return worker
 }
 
-export default function WasmTerrain({ active = true }) {
+export default function WasmTerrain({ scrollP = 0 }) {
   const meshRef = useRef()
   const wireRef = useRef()
   const [ready, setReady] = useState(false)
@@ -44,7 +44,6 @@ export default function WasmTerrain({ active = true }) {
   }, [ready])
 
   useFrame((state) => {
-    if (!active) return
     frameCountRef.current++
     if (frameCountRef.current % 2 !== 0) return
 
@@ -64,12 +63,18 @@ export default function WasmTerrain({ active = true }) {
     pos.needsUpdate = true; wpos.needsUpdate = true
     geo.computeVertexNormals()
 
-    if (meshRef.current) meshRef.current.rotation.y += 0.004
-    if (wireRef.current) wireRef.current.rotation.y = meshRef.current?.rotation.y || 0
+    if (meshRef.current) {
+      meshRef.current.position.y = -0.6 - scrollP * 0.8
+      meshRef.current.rotation.y += 0.004 + scrollP * 0.005
+    }
+    if (wireRef.current) {
+      wireRef.current.position.y = meshRef.current?.position.y || 0
+      wireRef.current.rotation.y = meshRef.current?.rotation.y || 0
+    }
   })
 
   return (
-    <group position={[0, -0.6, 0]}>
+    <group>
       <mesh ref={meshRef} geometry={geo}>
         <meshPhysicalMaterial color="#3b82f6" metalness={0.3} roughness={0.7} transparent opacity={0.15} side={THREE.DoubleSide} />
       </mesh>

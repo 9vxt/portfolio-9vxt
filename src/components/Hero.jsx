@@ -1,10 +1,8 @@
-import { useRef, useEffect, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import Scene3D from './Scene3D'
 import Terminal from './Terminal'
 
-function MatrixRain({ active }) {
+function MatrixRain() {
   const canvasRef = useRef()
   useEffect(() => {
     const canvas = canvasRef.current
@@ -16,14 +14,12 @@ function MatrixRain({ active }) {
     const fontSize = 10
     const cols = Math.floor(canvas.width / fontSize)
     const drops = Array.from({ length: cols }, () => Math.random() * canvas.height)
-
     const draw = () => {
-      if (!active) { id = requestAnimationFrame(draw); return }
       ctx.fillStyle = 'rgba(8, 12, 20, 0.05)'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.font = `${fontSize}px monospace`
       for (let i = 0; i < drops.length; i++) {
-        if (i % 3 !== 0) continue // skip 2/3 columns when not fully visible
+        if (i % 3 !== 0) continue
         if (drops[i] - 10 > canvas.height / fontSize && Math.random() > 0.98) { drops[i] = 0; continue }
         const char = chars[Math.floor(Math.random() * chars.length)]
         ctx.fillStyle = Math.random() > 0.97 ? '#f1f5f9' : '#3b82f6'
@@ -39,36 +35,15 @@ function MatrixRain({ active }) {
     const onResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
     window.addEventListener('resize', onResize)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', onResize) }
-  }, [active])
+  }, [])
   return <canvas ref={canvasRef} className="absolute inset-0 opacity-10 pointer-events-none" />
 }
 
-function useIsVisible(ref) {
-  const [visible, setVisible] = useState(true)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [ref])
-  return visible
-}
-
 export default function Hero() {
-  const sectionRef = useRef()
-  const visible = useIsVisible(sectionRef)
-
   return (
-    <section id="hero" ref={sectionRef} className="relative min-h-screen w-full overflow-hidden circuit-bg pt-14">
+    <section id="hero" className="relative min-h-screen w-full overflow-hidden pt-14">
       <div className="absolute inset-0 bg-gradient-to-b from-[#3b82f6]/5 via-transparent to-[#080c14]/90 pointer-events-none z-[1]" />
-      <MatrixRain active={visible} />
-
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop={visible ? 'always' : 'never'} fallback={<div className="w-full h-full bg-[#080c14]" />}>
-          <Scene3D active={visible} />
-        </Canvas>
-      </div>
+      <MatrixRain />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
         <motion.div
