@@ -17,12 +17,19 @@ import CursorGlow from './components/CursorGlow'
 import Scene3D from './components/Scene3D'
 import ShowcaseWall from './components/ShowcaseWall'
 import SplashScreen from './components/SplashScreen'
+import ShutdownScreen from './components/ShutdownScreen'
 import SoundToggle from './components/SoundEngine'
+import { onShutdown } from './lib/shutdown'
 
 export default function App() {
   const [booted, setBooted] = useState(false)
+  const [shutdown, setShutdown] = useState(false)
   const [scrollP, setScrollP] = useState(0)
   const scrollRaf = useRef(null)
+
+  useEffect(() => {
+    onShutdown(() => setShutdown(true))
+  }, [])
 
   useEffect(() => {
     const onScroll = () => {
@@ -39,6 +46,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       {!booted && <SplashScreen onFinish={() => setBooted(true)} />}
+      {shutdown && <ShutdownScreen onClose={() => { window.open('', '_self'); window.close() }} />}
       <div className="bg-[#080c14] text-[#f1f5f9] min-h-screen">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }}>

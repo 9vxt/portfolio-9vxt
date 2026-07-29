@@ -111,6 +111,8 @@ export function playClick() {
 // Global click handler
 if (typeof window !== 'undefined') {
   window.addEventListener('click', () => { if (_enabled) playClick() }, { passive: true })
+  // Auto-enable after 5 seconds if not already enabled via splash
+  setTimeout(() => { if (!_enabled) enableSound() }, 5000)
 }
 
 export default function SoundToggle() {

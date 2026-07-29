@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { playCommand } from './SoundEngine'
+import { shutdown } from '../lib/shutdown'
 
 const BANNER = `______     __      __        __  __                                  __                     
  /      \\   |  \\    |  \\      |  \\|  \\                                |  \\                    
@@ -80,9 +81,9 @@ const commands = {
   pwd        — Print working directory
   banner     — Show ASCII banner
   neofetch   — Fun system info
-  sudo       42    mit    wasm   — Easter eggs
+  sudo       42    mit    wasm  solar — Easter eggs / nav
   clear      — Clear terminal
-  exit       — Close this tab
+  exit       — Shutdown
   help       — Show this message`,
     type: 'help'
   }),
@@ -96,13 +97,14 @@ const commands = {
   date: () => ({ text: new Date().toString(), type: 'output' }),
   banner: () => ({ text: BANNER, type: 'banner' }),
   clear: () => null,
-  exit: () => { window.open('', '_self'); window.close(); return { text: 'Closing window...', type: 'system' } },
+  exit: () => { setTimeout(shutdown, 100); return { text: 'Shutting down...', type: 'system' } },
   sudo: () => ({ text: easterEggs.sudo, type: 'easteregg' }),
   neofetch: () => ({ text: easterEggs.neofetch, type: 'easteregg' }),
   '42': () => ({ text: easterEggs['42'], type: 'easteregg' }),
   mit: () => ({ text: easterEggs.mit, type: 'easteregg' }),
   wasm: () => ({ text: easterEggs.wasm, type: 'easteregg' }),
   echo: (args) => ({ text: args || '...', type: 'output' }),
+  solar: () => { window.location.hash = '#gpu'; return { text: 'Navigating to Solar System simulation...', type: 'system' } },
 }
 
 function catHandler(args) {
@@ -170,7 +172,7 @@ export default function Terminal({ className = '' }) {
     if (e.key === 'Enter') { e.preventDefault(); execute(input); setInput('') }
     else if (e.key === 'ArrowUp') { e.preventDefault(); if (!cmdHistory.length) return; const idx = histIdx === -1 ? cmdHistory.length - 1 : Math.max(0, histIdx - 1); setHistIdx(idx); setInput(cmdHistory[idx]) }
     else if (e.key === 'ArrowDown') { e.preventDefault(); if (histIdx === -1) return; const idx = histIdx + 1; if (idx >= cmdHistory.length) { setHistIdx(-1); setInput('') } else { setHistIdx(idx); setInput(cmdHistory[idx]) } }
-    else if (e.key === 'Tab') { e.preventDefault(); const all = Object.keys(commands).concat(['cat', 'project']); const match = all.find((c) => c.startsWith(input.toLowerCase())); if (match) setInput(match) }
+    else if (e.key === 'Tab') { e.preventDefault(); const all = Object.keys(commands).concat(['cat', 'project']); const match = all.find((c) => c.startsWith(input.toLowerCase()) && c !== input.toLowerCase()); if (match) setInput(match) }
   }
 
   const renderLine = (line, i) => {
