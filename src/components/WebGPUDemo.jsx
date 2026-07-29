@@ -36,7 +36,7 @@ fn compMain(@builtin(global_invocation_id) id: vec3<u32>) {
   p[i] = pt;
 }
 
-@group(1) @binding(0) var<storage, read> renderParticles: array<Particle>;
+@group(0) @binding(0) var<storage, read> renderParticles: array<Particle>;
 
 struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> }
 

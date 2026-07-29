@@ -1,20 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { playCommand } from './SoundEngine'
 
-const BANNER = `
- █████╗ ████████╗██╗  ██╗██╗██████╗  ██████╗ ██████╗ ██████╗ ███████╗███████╗
-██╔══██╗╚══██╔══╝██║  ██║██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
-███████║   ██║   ███████║██║██║  ██║██║   ██║██████╔╝██║  ██║█████╗  █████╗
-██╔══██║   ██║   ██╔══██║██║██║  ██║██║   ██║██╔══██╗██║  ██║██╔══╝  ██╔══╝
-██║  ██║   ██║   ██║  ██║██║██████╔╝╚██████╔╝██████╔╝██████╔╝███████╗███████╗
-╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
-             ████████╗██╗  ██╗ ██████╗ ███╗   ██╗ ██████╗ ██████╗  ██████╗
-             ╚══██╔══╝██║  ██║██╔═══██╗████╗  ██║██╔════╝██╔═══██╗██╔════╝
-                ██║   ███████║██║   ██║██╔██╗ ██║██║     ██║   ██║██║  ███╗
-                ██║   ██╔══██║██║   ██║██║╚██╗██║██║     ██║   ██║██║   ██║
-                ██║   ██║  ██║╚██████╔╝██║ ╚████║╚██████╗╚██████╔╝╚██████╔╝
-                ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝  ╚═════╝
-`
+const BANNER = `______     __      __        __  __                                  __                     
+ /      \\   |  \\    |  \\      |  \\|  \\                                |  \\                    
+|  $$$$$$\\ _| $$_   | $$____   \\$$| $$____    ______    ______    ____| $$  ______    ______  
+| $$__| $$|   $$ \\  | $$    \\ |  \\| $$    \\  /      \\  /      \\  /      $$ /      \\  /      \\ 
+| $$    $$ \\$$$$$$  | $$$$$$$\\| $$| $$$$$$$\\|  $$$$$$\\|  $$$$$$\\|  $$$$$$$|  $$$$$$\\|  $$$$$$\\
+| $$$$$$$$  | $$ __ | $$  | $$| $$| $$  | $$| $$  | $$| $$   \\$$| $$  | $$| $$    $$| $$    $$
+| $$  | $$  | $$|  \\| $$  | $$| $$| $$__/ $$| $$__/ $$| $$      | $$__| $$| $$$$$$$$| $$$$$$$$
+| $$  | $$   \\$$  $$| $$  | $$| $$| $$    $$ \\$$    $$| $$       \\$$    $$ \\$$     \\ \\$$     \\
+ \\$$   \\$$    \\$$$$  \\$$   \\$$ \\$$ \\$$$$$$$   \\$$$$$$  \\$$        \\$$$$$$$  \\$$$$$$$  \\$$$$$$$`
 
 const aboutText = `Hi! I'm Athibordee Thongboonma.
 I'm a Grade 10 student passionate about:
@@ -173,66 +168,39 @@ export default function Terminal({ className = '' }) {
 
   const handleKey = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); execute(input); setInput('') }
-    else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      if (!cmdHistory.length) return
-      const idx = histIdx === -1 ? cmdHistory.length - 1 : Math.max(0, histIdx - 1)
-      setHistIdx(idx); setInput(cmdHistory[idx])
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      if (histIdx === -1) return
-      const idx = histIdx + 1
-      if (idx >= cmdHistory.length) { setHistIdx(-1); setInput('') }
-      else { setHistIdx(idx); setInput(cmdHistory[idx]) }
-    } else if (e.key === 'Tab') {
-      e.preventDefault()
-      const all = Object.keys(commands).concat(['cat', 'project'])
-      const match = all.find((c) => c.startsWith(input.toLowerCase()))
-      if (match) setInput(match)
-    }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (!cmdHistory.length) return; const idx = histIdx === -1 ? cmdHistory.length - 1 : Math.max(0, histIdx - 1); setHistIdx(idx); setInput(cmdHistory[idx]) }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); if (histIdx === -1) return; const idx = histIdx + 1; if (idx >= cmdHistory.length) { setHistIdx(-1); setInput('') } else { setHistIdx(idx); setInput(cmdHistory[idx]) } }
+    else if (e.key === 'Tab') { e.preventDefault(); const all = Object.keys(commands).concat(['cat', 'project']); const match = all.find((c) => c.startsWith(input.toLowerCase())); if (match) setInput(match) }
   }
 
   const renderLine = (line, i) => {
     if (line.type === 'blank') return <div key={i} className="h-2" />
     if (line.type === 'input') return (
       <p key={i} className="mb-0.5 text-xs">
-        <span className="text-[#3b82f6]">athibordee</span>
-        <span className="text-[#1e293b]">@</span>
-        <span className="text-[#22d3ee]">portfolio</span>
-        <span className="text-[#1e293b]">:</span>
-        <span className="text-[#8b5cf6]">~</span>
-        <span className="text-[#f1f5f9]">$ </span>
-        <span className="text-[#f1f5f9]">{line.text}</span>
+        <span className="text-[#3b82f6]">athibordee</span><span className="text-[#1e293b]">@</span><span className="text-[#22d3ee]">portfolio</span><span className="text-[#1e293b]">:</span><span className="text-[#8b5cf6]">~</span><span className="text-[#f1f5f9]">$ </span><span className="text-[#f1f5f9]">{line.text}</span>
       </p>
     )
     if (line.type === 'system') return <p key={i} className="text-[#22d3ee] text-xs mb-0.5">{'◆'} {line.text}</p>
     if (line.type === 'error') return <p key={i} className="text-[#ef4444] text-xs mb-0.5">{'✖'} {line.text}</p>
     if (line.type === 'easteregg') return <pre key={i} className="text-[#8b5cf6] text-[10px] mb-0.5 leading-tight whitespace-pre">{line.text}</pre>
-    if (line.type === 'banner') return <pre key={i} className="text-[#3b82f6] text-[7px] sm:text-[9px] leading-tight whitespace-pre mb-2">{line.text}</pre>
+    if (line.type === 'banner') return <pre key={i} className="text-[#3b82f6] text-[6px] sm:text-[7px] leading-tight whitespace-pre mb-2">{line.text}</pre>
     return <pre key={i} className="text-[#94a3b8] text-xs mb-0.5 whitespace-pre-wrap leading-relaxed">{line.text}</pre>
   }
 
   return (
     <div className={`rounded-lg font-mono ${className}`} style={{ border: '1px solid #1e293b', background: 'rgba(8,12,20,0.88)' }} onClick={() => inputRef.current?.focus()}>
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[#1e293b]" style={{ background: '#0a0e17' }}>
-        <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-        <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
-        <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" /><span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" /><span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
         <span className="text-xs text-[#475569] ml-2">athibordee@portfolio:~/terminal</span>
       </div>
       <div className="p-4 h-56 sm:h-64 overflow-y-auto" ref={scrollRef}>
         {history.map((line, i) => renderLine(line, i))}
         <div className="flex items-center mt-1">
-          <span className="text-[#3b82f6] shrink-0 text-xs">athibordee</span>
-          <span className="text-[#1e293b] shrink-0 text-xs">@</span>
-          <span className="text-[#22d3ee] shrink-0 text-xs">portfolio</span>
-          <span className="text-[#1e293b] shrink-0 text-xs">:</span>
-          <span className="text-[#8b5cf6] shrink-0 text-xs">~</span>
-          <span className="text-[#f1f5f9] shrink-0 text-xs">$ </span>
-          <input ref={inputRef} type="text" value={input}
-            onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey}
-            className="flex-1 bg-transparent text-[#f1f5f9] text-xs outline-none border-none ml-0.5 caret-[#3b82f6]"
-            spellCheck={false} autoComplete="off" aria-label="Terminal input" />
+          <span className="text-[#3b82f6] shrink-0 text-xs">athibordee</span><span className="text-[#1e293b] shrink-0 text-xs">@</span>
+          <span className="text-[#22d3ee] shrink-0 text-xs">portfolio</span><span className="text-[#1e293b] shrink-0 text-xs">:</span>
+          <span className="text-[#8b5cf6] shrink-0 text-xs">~</span><span className="text-[#f1f5f9] shrink-0 text-xs">$ </span>
+          <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey}
+            className="flex-1 bg-transparent text-[#f1f5f9] text-xs outline-none border-none ml-0.5 caret-[#3b82f6]" spellCheck={false} autoComplete="off" aria-label="Terminal input" />
         </div>
       </div>
     </div>
