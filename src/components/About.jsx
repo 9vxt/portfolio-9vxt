@@ -2,23 +2,23 @@ import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
 
 const languages = [
-  { name: 'C++', level: 95, years: '5+ yrs', color: 'bg-[#3b82f6]' },
-  { name: 'Rust', level: 88, years: '3+ yrs', color: 'bg-[#22d3ee]' },
-  { name: 'Python', level: 92, years: '5+ yrs', color: 'bg-[#f59e0b]' },
-  { name: 'C', level: 90, years: '4+ yrs', color: 'bg-[#64748b]' },
-  { name: 'C#', level: 85, years: '3+ yrs', color: 'bg-[#8b5cf6]' },
-  { name: 'TypeScript', level: 90, years: '3+ yrs', color: 'bg-[#3b82f6]' },
-  { name: 'JavaScript', level: 92, years: '4+ yrs', color: 'bg-[#f59e0b]' },
-  { name: 'Assembly (x86)', level: 60, years: '1+ yrs', color: 'bg-[#34d399]' },
+  { name: 'C++', level: 92, years: 'C++17/20, embedded', color: 'bg-[#3b82f6]' },
+  { name: 'C', level: 85, years: 'Firmware, bare-metal', color: 'bg-[#64748b]' },
+  { name: 'C#', level: 65, years: 'Game dev, tooling', color: 'bg-[#8b5cf6]' },
+  { name: 'Python', level: 80, years: 'Scripting, tooling', color: 'bg-[#f59e0b]' },
+  { name: 'Rust', level: 70, years: 'Systems, memory safety', color: 'bg-[#22d3ee]' },
+  { name: 'TypeScript', level: 75, years: 'React, frontend', color: 'bg-[#3b82f6]' },
+  { name: 'JavaScript', level: 78, years: 'Frontend, Canvas', color: 'bg-[#f59e0b]' },
+  { name: 'GDScript', level: 60, years: 'Godot engine', color: 'bg-[#34d399]' },
 ]
 
 const domains = [
-  { label: 'Systems Programming', desc: 'OS dev, memory allocators, kernels' },
-  { label: 'Full-Stack Web', desc: 'React, Node.js, Next.js, APIs' },
-  { label: 'Embedded Systems', desc: 'Firmware, RTOS, IoT, microcontrollers' },
-  { label: 'Graphics & Simulation', desc: 'WebGL, Three.js, ray tracing' },
-  { label: 'Compiler / Language', desc: 'Lexers, parsers, AST, codegen' },
-  { label: 'Cryptography & Security', desc: 'ZKP, encryption, secure protocols' },
+  { label: 'System Design', desc: 'Low-level architecture, OS frameworks, memory safety' },
+  { label: 'Embedded Systems', desc: 'ESP32-S3, firmware, bare-metal C/C++' },
+  { label: 'Frontend Dev', desc: 'React, TypeScript, UI engineering' },
+  { label: 'OS Design', desc: 'Rucyd OS, Linux NoMMU, custom kernels' },
+  { label: 'Game Dev', desc: 'Godot engine, GDScript, interactive tools' },
+  { label: 'Modeling & CAD', desc: 'Blender, AutoCAD, technical drawing' },
 ]
 
 export default function About() {
@@ -64,19 +64,23 @@ export default function About() {
                 </p>
                 <p className="text-xs text-[#64748b]">───</p>
                 <p>
-                  Hey, I'm Athibordee — a high school student (Grade 10) who lives and breathes
-                  systems programming. I've been writing C++ since middle school, fell in love
-                  with Rust's memory safety, and use Python to glue everything together.
+                  Hey, I'm Gust — a 15-year-old Computer Engineering enthusiast from Thailand,
+                  currently in Grade 10 at Watkhienkhet School (Science-Math-Technology Program).
                 </p>
                 <p>
-                  I build compilers, experiment with OS development, contribute to open-source
-                  databases, and create full-stack apps with React and TypeScript. My current
-                  obsession is GPU compute — using Vulkan and WebGPU for simulation work.
+                  I don't just write code — I need to know what happens at the silicon level.
+                  My work lives at the boundary between hardware and software: building custom
+                  OS frameworks, designing microcontroller logic, and enforcing memory safety
+                  where physical MMUs don't exist.
                 </p>
                 <p>
-                  I'm aiming for MIT because I want to push computer engineering further —
-                  designing chips, building kernels, and architecting distributed systems that
-                  scale. Think lower than C, higher than the cloud.
+                  I build embedded systems & firmware (ESP32-S3, bare-metal C/C++), architect
+                  memory-safe OS frameworks (Rucyd OS), and explore compiler design, CPU
+                  architecture, and reverse engineering with Ghidra/x64dbg.
+                </p>
+                <p>
+                  My mission: POSN Computer, SAT 1600, TOEFL 110+, and studying Computer
+                  Engineering at MIT.
                 </p>
                 <p className="text-xs text-[#64748b]">───</p>
                 <p className="text-xs text-[#475569]">
@@ -168,15 +172,15 @@ export default function About() {
                 <span className="text-xs text-[#475569] font-mono ml-2">avatar</span>
               </div>
               <div className="w-40 h-40 mx-auto bg-[#0f172a] border-2 border-[#1e293b] flex items-center justify-center mb-3">
-                <span className="text-5xl font-mono text-[#3b82f6]/30">A</span>
+                <span className="text-5xl font-mono text-[#3b82f6]/30">G</span>
               </div>
-              <p className="text-xs font-mono text-[#f1f5f9]">Athibordee Thongboonma</p>
-              <p className="text-[10px] font-mono text-[#64748b]">Grade 10 · Computer Engineering</p>
+              <p className="text-xs font-mono text-[#f1f5f9]">Athibordee "Gust" Thongboonma</p>
+              <p className="text-[10px] font-mono text-[#64748b]">Grade 10 · Computer Engineering · Thailand</p>
               <div className="flex justify-center gap-3 mt-3 pt-3 border-t border-[#1e293b]">
                 <span className="text-[10px] text-[#475569] font-mono">C++</span>
-                <span className="text-[10px] text-[#475569] font-mono">Rust</span>
-                <span className="text-[10px] text-[#475569] font-mono">Python</span>
                 <span className="text-[10px] text-[#475569] font-mono">C</span>
+                <span className="text-[10px] text-[#475569] font-mono">Python</span>
+                <span className="text-[10px] text-[#475569] font-mono">Rust</span>
                 <span className="text-[10px] text-[#475569] font-mono">C#</span>
               </div>
             </motion.div>

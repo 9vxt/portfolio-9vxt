@@ -1,0 +1,100 @@
+Name: Athibordee Thongboonma
+Nickname: Gust
+Age: 15y 9m
+Country: Thailand
+HighSchool: Watkhienkhet School
+Grade: 10
+Class Program: Science-Math-Technology Program
+Student number: 21615
+
+i want to be <Computer Engineer>
+
+
+
+about me: {"Hi, I'm Gust (Athibordee Thongboonma). 
+    A 15-year-old Computer Engineering enthusiast based in Thailand.
+
+    I don't just write code; I like to know what happens at the silicon level. 
+    My focus revolves around the boundary between hardware and software—building 
+    custom OS frameworks, designing microcontroller logic, and optimizing memory 
+    safety where physical MMUs don't exist.
+
+    WHAT I DO:
+    - Embedded Systems & Firmware Development (ESP32-S3, Bare-metal C/C++)
+    - Systems Architecture & Memory Safety Frameworks (Rucyd OS)
+    - Computer Architecture, Compiler Design & Reverse Engineering
+    - Game Engine & Interactive Tools Development (Godot, Blender, CAD)
+
+    CURRENT MISSION:
+    Conquering competitive programming (POSN Computer), mastering low-level 
+    CPU architecture, and paving my way toward studying Computer Engineering 
+    at MIT."
+}
+
+contact:
+    ig "https://www.instagram.com/9vxt_fr/"
+    github "https://github.com/9vxt"
+    linkedin "https://www.linkedin.com/in/athibordee-thongboonma-879194426/"
+    Line id "qwertyuiop0246"
+    Gmail "9vxt.fr@gmail.com"
+    spotify "https://open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq"
+
+language: English, Thai
+
+Programming language: C++, C#, C, Python, Rust, (Html, Css), Javascript, typescript, Gdscript(Godot)
+
+Developing Tools: linux cli, Git, Autocad, Blender, Godot, Ghidra, x64dbg, cmake, Vscode
+
+Main skills: system design, Fontend Dev, Os design
+
+Secondary skills: Game dev(Godot), Modeling(Blender), Drawing(AutoCad)
+
+My project:{
+    1) Esp32-S3 calculator
+        "Role: Developer & Hardware Designer
+
+        Tech Stack: C++, Python, ESP32-S3 Dual-Core Architecture
+
+        Overview: Built an advanced standalone embedded calculator utilizing a dual-core ESP32-S3 chip to handle complex mathematical operations and custom scripting.
+
+        Key Achievements:
+
+        Implemented a custom Chorded Input System for simultaneous multi-button shortcuts to optimize handheld user input.
+
+        Built a Hybrid Execution Engine (C++ & Custom MicroPython) allowing seamless toggling between Computer Algebra System (CAS) and Non-CAS modes, with support for unlimited user-defined custom functions."
+
+    2) Rucyd Os on Esp32-S3
+        "1. Rucyd OS Framework on ESP32-S3
+        Role: System Architect & Lead Developer
+
+        Tech Stack: C, C++, ESP32-S3 Architecture, Linux NoMMU Architecture
+
+    Overview: Designed and deployed a lightweight Linux NoMMU framework (<2MB footprint) on the ESP32-S3 with a custom ASCII Text User Interface (TUI) to prevent runtime memory corruption in hardware environments lacking physical MMUs.
+
+    Key Achievements:
+
+    Developed a Software-Defined Memory Access Validation System leveraging a Tagged Object Registry and Gatekeeper API.
+
+    Successfully enforced memory bounds and access permissions in software, preventing system crashes on hardware without native MMU support."
+
+    3) Esp32-S3 Guitar multi-effect 
+        "Status: In Planning & R&D Phase
+
+        Focus: Real-time Digital Signal Processing (DSP) on microcontrollers, low-latency audio processing, and hardware circuit interfacing."
+}
+
+My goal:{
+    Posn Computer
+    Sat 1600
+    toelf 110+
+
+    MIT University
+}
+
+Now lerning{
+    asm
+    cs50x
+    mit 6.006
+    compiler design
+    cpu design
+}

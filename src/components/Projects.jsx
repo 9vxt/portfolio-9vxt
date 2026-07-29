@@ -3,58 +3,31 @@ import { motion } from 'framer-motion'
 
 const projects = [
   {
-    title: 'ZetaDB',
-    desc: 'Embedded key-value storage engine written in Rust with LSM-tree architecture, WAL recovery, and ACID transactions. Benchmarked at 50k writes/sec.',
-    tags: ['Rust', 'LSM-Tree', 'Storage', 'CLI'],
-    lang: 'Rust',
+    title: 'ESP32-S3 Calculator',
+    desc: 'Advanced standalone embedded calculator on dual-core ESP32-S3. Custom Chorded Input System for multi-button shortcuts, Hybrid Execution Engine (C++ & MicroPython) for CAS/Non-CAS modes with unlimited custom functions.',
+    tags: ['C++', 'Python', 'ESP32-S3', 'Dual-Core', 'MicroPython'],
+    lang: 'C++ / Python',
     star: '★',
     accent: 'border-[#22d3ee] hover:shadow-[0_0_20px_rgba(34,211,238,0.1)]',
     badge: 'bg-[#22d3ee]/10 text-[#22d3ee]',
   },
   {
-    title: 'CypherVM',
-    desc: 'A lightweight stack-based virtual machine written in C++ with a custom bytecode format, JIT compilation via LLVM, and a minimal runtime for embedded systems.',
-    tags: ['C++', 'LLVM', 'VM', 'JIT'],
-    lang: 'C++',
+    title: 'Rucyd OS on ESP32-S3',
+    desc: 'Lightweight Linux NoMMU framework (<2MB) with custom ASCII TUI. Software-Defined Memory Access Validation via Tagged Object Registry & Gatekeeper API — prevents runtime memory corruption without physical MMU.',
+    tags: ['C', 'C++', 'ESP32-S3', 'NoMMU', 'OS Dev', 'Memory Safety'],
+    lang: 'C / C++',
     star: '★',
     accent: 'border-[#3b82f6] hover:shadow-[0_0_20px_rgba(59,130,246,0.1)]',
     badge: 'bg-[#3b82f6]/10 text-[#3b82f6]',
   },
   {
-    title: 'PyTorch Ray',
-    desc: 'GPU-accelerated ray tracer implemented in Python with CUDA kernels, BVH acceleration, and support for PBR materials. Renders at 4K resolution.',
-    tags: ['Python', 'CUDA', 'Graphics', 'GPU'],
-    lang: 'Python',
-    star: '★',
+    title: 'ESP32-S3 Guitar Multi-Effect',
+    desc: 'In R&D phase. Real-time Digital Signal Processing (DSP) on microcontrollers, low-latency audio processing, and hardware circuit interfacing for guitar effects on ESP32-S3.',
+    tags: ['C++', 'ESP32-S3', 'DSP', 'Audio', 'I2S'],
+    lang: 'C++',
+    star: '☆',
     accent: 'border-[#f59e0b] hover:shadow-[0_0_20px_rgba(245,158,11,0.1)]',
     badge: 'bg-[#f59e0b]/10 text-[#f59e0b]',
-  },
-  {
-    title: 'NeXus Engine',
-    desc: 'Real-time collaborative 3D editor with CRDT-based conflict resolution, WebRTC P2P networking, and a Three.js-powered viewport. Think Figma for 3D.',
-    tags: ['TypeScript', 'Three.js', 'WebRTC', 'React'],
-    lang: 'TypeScript',
-    star: '★',
-    accent: 'border-[#8b5cf6] hover:shadow-[0_0_20px_rgba(139,92,246,0.1)]',
-    badge: 'bg-[#8b5cf6]/10 text-[#8b5cf6]',
-  },
-  {
-    title: 'AetherOS',
-    desc: 'A toy Unix-like kernel for x86-64 with a custom bootloader, interrupt handling, virtual memory paging, and a simple FAT32 filesystem driver.',
-    tags: ['C', 'Assembly', 'x86', 'OS Dev'],
-    lang: 'C',
-    star: '★',
-    accent: 'border-[#34d399] hover:shadow-[0_0_20px_rgba(52,211,153,0.1)]',
-    badge: 'bg-[#34d399]/10 text-[#34d399]',
-  },
-  {
-    title: 'Protocol Zero',
-    desc: 'Automated security auditor for Ethereum smart contracts using symbolic execution via Z3 SMT solver. Detects reentrancy, overflow, and access control bugs.',
-    tags: ['Rust', 'Solidity', 'SMT', 'CLI'],
-    lang: 'Rust',
-    star: '★',
-    accent: 'border-[#ef4444] hover:shadow-[0_0_20px_rgba(239,68,68,0.1)]',
-    badge: 'bg-[#ef4444]/10 text-[#ef4444]',
   },
 ]
 
@@ -125,7 +98,11 @@ export default function Projects() {
           </h2>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            <p className="text-[11px] font-mono text-[#64748b] col-span-full -mt-8 mb-2">
+              <span className="text-[#34d399]">$</span> ls -la /projects/
+              <span className="text-[#475569] ml-2"># 3 entries</span>
+            </p>
           {projects.map((p, i) => (
             <ProjectCard key={p.title} project={p} index={i} visible={visible} />
           ))}

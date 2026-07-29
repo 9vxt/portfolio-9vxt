@@ -2,10 +2,10 @@ import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
 
 const socials = [
-  { label: 'GitHub', user: '@athibordee', href: 'https://github.com/athibordee' },
-  { label: 'LinkedIn', user: 'in/athibordee', href: '#' },
-  { label: 'Instagram', user: '@athibordee', href: '#' },
-  { label: 'Twitter / X', user: '@athibordee', href: '#' },
+  { label: 'GitHub', user: '@9vxt', href: 'https://github.com/9vxt' },
+  { label: 'Instagram', user: '@9vxt_fr', href: 'https://www.instagram.com/9vxt_fr/' },
+  { label: 'LinkedIn', user: 'Athibordee Thongboonma', href: 'https://www.linkedin.com/in/athibordee-thongboonma-879194426/' },
+  { label: 'Spotify', user: '9vxt', href: 'https://open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq' },
 ]
 
 export default function Contact() {
@@ -24,7 +24,7 @@ export default function Contact() {
           <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f5f9] mb-3 font-mono">contact<span className="text-[#34d399]">_</span>me</h2>
           <p className="text-xs font-mono text-[#64748b]">
             No backend — email me directly at{' '}
-            <a href="mailto:athibordee@example.com" className="text-[#3b82f6] hover:underline">athibordee@example.com</a>
+            <a href="mailto:9vxt.fr@gmail.com" className="text-[#3b82f6] hover:underline">9vxt.fr@gmail.com</a>
           </p>
         </motion.div>
 
@@ -52,10 +52,10 @@ export default function Contact() {
                 <span className="ml-auto text-[10px] text-[#475569] group-hover:text-[#3b82f6] transition-colors">↗</span>
               </a>
             ))}
-            <a href="mailto:athibordee@example.com"
+            <a href="mailto:9vxt.fr@gmail.com"
               className="sm:col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-[#3b82f6]/10 border border-[#3b82f6]/30 hover:bg-[#3b82f6]/20 transition-all group rounded">
               <span className="text-xs font-mono text-[#3b82f6]">$</span>
-              <span className="text-xs font-mono text-[#f1f5f9] group-hover:text-[#3b82f6] transition-colors">athibordee@example.com</span>
+              <span className="text-xs font-mono text-[#f1f5f9] group-hover:text-[#3b82f6] transition-colors">9vxt.fr@gmail.com</span>
               <span className="text-[10px] text-[#475569] group-hover:text-[#3b82f6] transition-colors">↗</span>
             </a>
           </div>

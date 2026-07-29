@@ -1,46 +1,45 @@
 import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
 
 const categories = [
   {
     title: 'systems_programming',
     icon: '⚙',
     skills: [
-      { name: 'C++', level: 95, sub: 'C++17/20, templates, STL, Boost' },
-      { name: 'Rust', level: 88, sub: 'Ownership, async, unsafe, WASM' },
-      { name: 'C', level: 90, sub: 'Memory management, embedded, Linux' },
-      { name: 'Assembly (x86/ARM)', level: 55, sub: 'Registers, interrupts, calling convention' },
+      { name: 'C++', level: 90, sub: 'C++17/20, embedded, ESP32-S3, bare-metal' },
+      { name: 'C', level: 85, sub: 'Memory management, firmware, Linux NoMMU' },
+      { name: 'Rust', level: 70, sub: 'Ownership, async, systems programming' },
+      { name: 'Assembly', level: 55, sub: 'x86/ARM, registers, reverse engineering' },
     ],
   },
   {
     title: 'full_stack_dev',
     icon: '◈',
     skills: [
-      { name: 'TypeScript', level: 90, sub: 'React, Next.js, Node, tRPC' },
-      { name: 'Python', level: 92, sub: 'FastAPI, Django, NumPy, asyncio' },
-      { name: 'C# / .NET', level: 85, sub: 'ASP.NET, LINQ, Unity' },
-      { name: 'PostgreSQL', level: 78, sub: 'Query optimization, indexing, PL/pgSQL' },
+      { name: 'TypeScript', level: 75, sub: 'React, Node.js, type systems' },
+      { name: 'Python', level: 80, sub: 'Scripting, tooling, MicroPython on ESP32' },
+      { name: 'C#', level: 65, sub: 'Game dev, Godot, .NET tooling' },
+      { name: 'JavaScript', level: 78, sub: 'Frontend, Canvas API, WebGPU' },
     ],
   },
   {
-    title: 'graphics_tools',
+    title: 'embedded_tools',
     icon: '◆',
     skills: [
-      { name: 'Three.js / WebGL', level: 85, sub: '3D rendering, shaders, interactivity' },
-      { name: 'Vulkan / WebGPU', level: 60, sub: 'Compute shaders, GPU pipelines' },
-      { name: 'Ray Tracing', level: 50, sub: 'Path tracing, BVH, light transport' },
-      { name: 'Blender', level: 65, sub: 'Modeling, rendering, scripting' },
+      { name: 'ESP32-S3', level: 92, sub: 'Dual-core, GPIO, I2S, SPI, custom firmware' },
+      { name: 'Godot', level: 70, sub: 'GDScript, game engine development' },
+      { name: 'Blender', level: 60, sub: '3D modeling, rendering' },
+      { name: 'AutoCAD', level: 65, sub: 'Technical drawing, hardware design' },
     ],
   },
   {
     title: 'infra_tools',
     icon: '⎔',
     skills: [
-      { name: 'Docker / K8s', level: 75, sub: 'Containerization, orchestration' },
-      { name: 'Linux', level: 90, sub: 'Arch, kernel config, shell scripting' },
-      { name: 'Git / CI/CD', level: 88, sub: 'GitHub Actions, GitLab CI' },
-      { name: 'Cloud (AWS/GCP)', level: 70, sub: 'EC2, S3, Lambda, Cloud Run' },
+      { name: 'Linux CLI', level: 88, sub: 'Arch Linux, shell scripting, system admin' },
+      { name: 'Git', level: 85, sub: 'Version control, CI/CD workflows' },
+      { name: 'Ghidra / x64dbg', level: 50, sub: 'Reverse engineering, disassembly' },
+      { name: 'CMake', level: 75, sub: 'Build systems, cross-compilation toolchains' },
     ],
   },
 ]
@@ -55,7 +54,7 @@ function SkillCard({ cat, index, visible }) {
     >
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#1e293b]">
         <span className="text-base">{cat.icon}</span>
-        <span className="text-xs font-mono text-[#3b82f6]">{cat.title}</span>
+        <span className="text-xs font-mono text-[#22d3ee]">{cat.title}</span>
       </div>
       <div className="space-y-3">
         {cat.skills.map((s, i) => (
@@ -84,11 +83,13 @@ function SkillRow({ skill, index, visible, parentIndex }) {
       </div>
       <p className="text-[10px] font-mono text-[#475569] mb-1">{skill.sub}</p>
       <div className="w-full h-1 bg-[#1e293b] rounded-full overflow-hidden">
-        <div className="h-full bg-[#3b82f6] rounded-full transition-all duration-[1200ms] ease-out" style={{ width: `${w}%` }} />
+        <div className="h-full bg-[#22d3ee] rounded-full transition-all duration-[1200ms] ease-out" style={{ width: `${w}%` }} />
       </div>
     </div>
   )
 }
+
+import { useEffect, useState } from 'react'
 
 export default function Skills() {
   const [ref, visible] = useOnScreen(0.05)

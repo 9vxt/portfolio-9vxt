@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs font-mono text-[#475569]">
-            <span className="text-[#3b82f6]">athibordee</span>
+            <span className="text-[#3b82f6]">9vxt</span>
             <span className="text-[#1e293b]">@</span>
             <span className="text-[#22d3ee]">portfolio</span>
             <span className="text-[#1e293b]">:</span>
@@ -14,14 +14,14 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-4">
             <p className="text-xs font-mono text-[#475569]">
-              <span className="text-[#1e293b]">// </span>crafted with{' '}
-              <span className="text-[#3b82f6]">React</span>
-              <span className="text-[#1e293b]"> + </span>
-              <span className="text-[#22d3ee]">Three.js</span>
-              <span className="text-[#1e293b]"> + </span>
-              <span className="text-[#34d399]">WASM</span>
-              <span className="text-[#1e293b]"> + </span>
-              <span className="text-[#f59e0b]">TailwindCSS</span>
+            <span className="text-[#1e293b]">// </span>crafted with{' '}
+               <span className="text-[#3b82f6]">React</span>
+               <span className="text-[#1e293b]"> + </span>
+               <span className="text-[#22d3ee]">ESP32</span>
+               <span className="text-[#1e293b]"> + </span>
+               <span className="text-[#34d399]">C++</span>
+               <span className="text-[#1e293b]"> + </span>
+               <span className="text-[#f59e0b]">TailwindCSS</span>
             </p>
           </div>
         </div>
