@@ -113,19 +113,48 @@ export function playCommand() {
 }
 
 export function playBoot() {
-  if (!_enabled) return
   try {
     const c = getCtx()
-    const notes = [262, 330, 392, 523, 659]
+    const g = c.createGain()
+    g.gain.value = 0.1
+    g.connect(c.destination)
+    const notes = [262, 330, 392, 523, 659, 784]
+    notes.forEach((f, i) => {
+      const osc = c.createOscillator(); const og = c.createGain()
+      osc.type = 'sine'; osc.frequency.value = f
+      og.gain.setValueAtTime(0, c.currentTime + i * 0.08)
+      og.gain.linearRampToValueAtTime(0.08, c.currentTime + i * 0.08 + 0.04)
+      og.gain.exponentialRampToValueAtTime(0.001, c.currentTime + i * 0.08 + 0.35)
+      osc.connect(og); og.connect(g); osc.start(c.currentTime + i * 0.08); osc.stop(c.currentTime + i * 0.08 + 0.35)
+    })
+    const bass = c.createOscillator(); const bg = c.createGain()
+    bass.type = 'triangle'; bass.frequency.value = 110
+    bg.gain.setValueAtTime(0.06, c.currentTime)
+    bg.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.8)
+    bass.connect(bg); bg.connect(g); bass.start(); bass.stop(c.currentTime + 0.8)
+  } catch {}
+}
+
+export function playShutdown() {
+  try {
+    const c = getCtx()
+    const notes = [659, 523, 392, 330, 262, 196, 165]
     notes.forEach((f, i) => {
       const osc = c.createOscillator(); const g = c.createGain()
-      osc.type = 'sine'; osc.frequency.value = f
-      g.gain.value = 0.06
-      g.gain.setValueAtTime(0, c.currentTime + i * 0.1)
-      g.gain.linearRampToValueAtTime(0.06, c.currentTime + i * 0.1 + 0.05)
-      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + i * 0.1 + 0.3)
-      osc.connect(g); g.connect(masterGain); osc.start(c.currentTime + i * 0.1); osc.stop(c.currentTime + i * 0.1 + 0.3)
+      osc.type = 'triangle'; osc.frequency.value = f
+      g.gain.setValueAtTime(0.04, c.currentTime + i * 0.15)
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + i * 0.15 + 0.4)
+      if (masterGain) { osc.connect(g); g.connect(masterGain) }
+      else { g.connect(c.destination) }
+      osc.start(c.currentTime + i * 0.15); osc.stop(c.currentTime + i * 0.15 + 0.4)
     })
+    const noise = c.createOscillator(); const ng = c.createGain()
+    noise.type = 'sawtooth'; noise.frequency.value = 40
+    ng.gain.setValueAtTime(0.03, c.currentTime)
+    ng.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.5)
+    if (masterGain) { noise.connect(ng); ng.connect(masterGain) }
+    else { ng.connect(c.destination) }
+    noise.start(); noise.stop(c.currentTime + 1.5)
   } catch {}
 }
 

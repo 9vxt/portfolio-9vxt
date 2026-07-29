@@ -1,3 +1,8 @@
+import { disableSound } from '../components/SoundEngine'
+
 let handler = null
 export function onShutdown(fn) { handler = fn }
-export function shutdown() { if (handler) handler() }
+export function shutdown() {
+  disableSound()
+  if (handler) handler()
+}

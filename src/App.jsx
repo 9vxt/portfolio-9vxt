@@ -18,6 +18,7 @@ import Scene3D from './components/Scene3D'
 import ShowcaseWall from './components/ShowcaseWall'
 import SplashScreen from './components/SplashScreen'
 import ShutdownScreen from './components/ShutdownScreen'
+import GlobalGlitch from './components/GlobalGlitch'
 import SoundToggle from './components/SoundEngine'
 import { onShutdown } from './lib/shutdown'
 
@@ -47,7 +48,7 @@ export default function App() {
     <ErrorBoundary>
       {!booted && <SplashScreen onFinish={() => setBooted(true)} />}
       {shutdown && <ShutdownScreen onClose={() => { window.open('', '_self'); window.close() }} />}
-      <div className="bg-[#080c14] text-[#f1f5f9] min-h-screen">
+      <div className="bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }}>
             <Scene3D scrollP={scrollP} />
@@ -72,6 +73,7 @@ export default function App() {
         <ScrollProgress />
         <CursorGlow />
         <SoundToggle />
+        <GlobalGlitch />
       </div>
     </ErrorBoundary>
   )

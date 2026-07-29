@@ -12,54 +12,56 @@ const BANNER = `______     __      __        __  __                             
 | $$  | $$   \\$$  $$| $$  | $$| $$| $$    $$ \\$$    $$| $$       \\$$    $$ \\$$     \\ \\$$     \\
  \\$$   \\$$    \\$$$$  \\$$   \\$$ \\$$ \\$$$$$$$   \\$$$$$$  \\$$        \\$$$$$$$  \\$$$$$$$  \\$$$$$$$`
 
-const aboutText = `Hi! I'm Athibordee Thongboonma.
-I'm a Grade 10 student passionate about:
-  • Systems programming (C++, Rust, C)
-  • Full-stack development
-  • 3D graphics & GPU compute
-  • AI/ML and compilers
+const aboutText = `Hi! I'm Gust (Athibordee Thongboonma).
+I'm a 15-year-old Computer Engineering enthusiast from Thailand.
+Grade 10 @ Watkhienkhet School (Science-Math-Technology Program).
 
-I build things that push the boundaries of what's possible.`
+My focus is the boundary between hardware and software:
+  • Embedded systems & firmware (ESP32-S3, bare-metal C/C++)
+  • OS frameworks & memory safety (Rucyd OS, NoMMU)
+  • Computer architecture & compiler design
+  • Reverse engineering (Ghidra, x64dbg)
+
+Current mission: POSN Computer → SAT 1600 → TOEFL 110+ → MIT`
 
 const skillsText = `Technical Skills:
-  C++           ████████████████  95%
-  Rust          ██████████████░  88%
-  Python        ███████████████░  92%
-  C             ██████████████░  90%
-  C#            █████████████░░  85%
-  TypeScript    ██████████████░  90%
-  React         ███████████████░  92%
-  Three.js      █████████████░░  82%`
+  C++           ████████████████  90%  (embedded, ESP32-S3)
+  C             ██████████████░░  85%  (firmware, bare-metal)
+  Python        ██████████████░░  80%  (scripting, MicroPython)
+  Rust          █████████████░░░  70%  (systems, memory safety)
+  TypeScript    █████████████░░░  75%  (React, frontend)
+  C#            ███████████░░░░░  65%  (Godot, tooling)
+  JavaScript    █████████████░░░  78%  (frontend, Canvas)
+  Assembly      █████████░░░░░░░  55%  (x86, ARM, RE)`
 
 const projectsText = `Projects:
-  [1] ZetaDB    — Embedded KV store in Rust (50k writes/sec)
-  [2] CypherVM  — Stack VM with JIT in C++ (LLVM)
-  [3] PyTorch   — GPU ray tracer in Python + CUDA
-  [4] NeXus     — 3D collaborative editor
-  [5] AetherOS  — Toy x86-64 kernel in C
-  [6] ZeroAudit — Smart contract security auditor
+  [1] ESP32-S3 Calculator — C++/Python hybrid embedded calc
+  [2] Rucyd OS on ESP32-S3 — NoMMU framework (<2MB)
+  [3] Guitar Multi-Effect — R&D phase, DSP on ESP32-S3
 
 Type 'project 1' (or any number) for details.`
 
-const contactText = `  GitHub:    github.com/athibordee
-  LinkedIn:  linkedin.com/in/athibordee
-  Email:     athibordee@example.com
-  Instagram: @athibordee`
+const contactText = `  GitHub:    github.com/9vxt
+  Instagram: instagram.com/9vxt_fr
+  LinkedIn:  linkedin.com/in/athibordee-thongboonma
+  Email:     9vxt.fr@gmail.com
+  Spotify:   open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq
+  LINE:      qwertyuiop0246`
 
 const easterEggs = {
   sudo: "Nice try. You don't have root here. 🔐",
   neofetch: `
-         ██▀▀▀▀███        athibordee@portfolio
+         ██▀▀▀▀███        9vxt@portfolio
        ██░░░░░░░░██       ─────────────────────
-     ██░░░░░░░░░░░░██     OS: Web BrowserOS v1
-    ██░░░░░░░░░░░░░░██    Host: Human (Grade 10)
-   ██░░░░░░░░████░░░░██   Kernel: JS ES2025
-   ██░░░░░░░░████░░░░██   Shell: C++/Rust
-   ██░░░░░░░░░░░░░░░░██   Uptime: 16 years
-    ██░░░░░░░░░░░░░░██    IDE: Neovim + clangd
-     ██░░░░░░░░░░░░██     GPU: Integrated + RTX
-       ██░░░░░░░░██       CPU: Bio CPU 1.5GHz
-         ██████████       MEM: 16GB + 5TB SSD
+     ██░░░░░░░░░░░░██     OS: RucydOS v1 (NoMMU)
+    ██░░░░░░░░░░░░░░██    User: 9vxt (Grade 10)
+   ██░░░░░░░░████░░░░██   Kernel: ESP32-S3 @ 240MHz
+   ██░░░░░░░░████░░░░██   Shell: C++ bare-metal
+   ██░░░░░░░░░░░░░░░░██   Uptime: 15 years 9 months
+    ██░░░░░░░░░░░░░░██    IDE: VS Code
+     ██░░░░░░░░░░░░██     Board: ESP32-S3
+       ██░░░░░░░░██       Lang: Thai, English
+         ██████████       Target: MIT '30
   `,
   '42': 'The answer to life, the universe, and everything.',
   mit: '🏛️  MIT — Mens et Manus (Mind and Hand)\n    Founded 1861 · Cambridge, MA\n    Let\'s build the future together.',
@@ -81,19 +83,19 @@ const commands = {
   pwd        — Print working directory
   banner     — Show ASCII banner
   neofetch   — Fun system info
-  sudo       42    mit    wasm  solar — Easter eggs / nav
+  sudo       42    mit    wasm  solar — Easter eggs
   clear      — Clear terminal
   exit       — Shutdown
   help       — Show this message`,
     type: 'help'
   }),
-  whoami: () => ({ text: `athibordee\n  ────────────\n  Name: Athibordee Thongboonma\n  Grade: 10\n  School: High School\n  Status: 🚀 Building`, type: 'output' }),
+  whoami: () => ({ text: `9vxt\n  ────────────\n  Name: Athibordee Thongboonma\n  Grade: 10 · Watkhienkhet School\n  Status: 🚀 Building towards MIT`, type: 'output' }),
   about: () => ({ text: aboutText, type: 'output' }),
   skills: () => ({ text: skillsText, type: 'output' }),
   projects: () => ({ text: projectsText, type: 'output' }),
   contact: () => ({ text: contactText, type: 'output' }),
   ls: () => ({ text: 'about/  skills/  learning/  projects/  contact/  wasm/', type: 'output' }),
-  pwd: () => ({ text: '/home/athibordee/portfolio', type: 'output' }),
+  pwd: () => ({ text: '/home/9vxt/portfolio', type: 'output' }),
   date: () => ({ text: new Date().toString(), type: 'output' }),
   banner: () => ({ text: BANNER, type: 'banner' }),
   clear: () => null,
@@ -118,12 +120,9 @@ function catHandler(args) {
 function projectHandler(args) {
   const n = parseInt(args)
   const details = [
-    { t: 'ZetaDB', d: 'Embedded KV store in Rust with LSM-tree, WAL, ACID. 50k writes/sec.', s: 'Rust, LSM-Tree, CLI' },
-    { t: 'CypherVM', d: 'Stack VM with JIT compilation via LLVM. Custom bytecode format.', s: 'C++, LLVM, JIT' },
-    { t: 'PyTorch Ray', d: 'GPU ray tracer in Python with CUDA, BVH, PBR materials.', s: 'Python, CUDA, GPU' },
-    { t: 'NeXus Engine', d: 'Real-time collab 3D editor. CRDT conflict resolution, WebRTC.', s: 'Three.js, WebRTC, CRDT' },
-    { t: 'AetherOS', d: 'Toy x86-64 kernel. Bootloader, interrupts, paging, FAT32.', s: 'C, Assembly, OS Dev' },
-    { t: 'Protocol Zero', d: 'Smart contract auditor via Z3 SMT solver. Detects reentrancy.', s: 'Rust, SMT, Solidity' },
+    { t: 'ESP32-S3 Calculator', d: 'Advanced standalone embedded calculator on dual-core ESP32-S3. Custom Chorded Input System for multi-button shortcuts. Hybrid Execution Engine (C++ & MicroPython) toggling between CAS and Non-CAS modes with unlimited user-defined functions.', s: 'C++, Python, ESP32-S3' },
+    { t: 'Rucyd OS on ESP32-S3', d: 'Lightweight Linux NoMMU framework (<2MB footprint) with custom ASCII TUI. Software-Defined Memory Access Validation via Tagged Object Registry & Gatekeeper API — prevents runtime memory corruption without physical MMU.', s: 'C, C++, NoMMU, ESP32-S3' },
+    { t: 'ESP32-S3 Guitar Multi-Effect', d: 'In R&D phase. Real-time Digital Signal Processing (DSP) on microcontrollers, low-latency audio processing, and hardware circuit interfacing for guitar effects.', s: 'C++, DSP, I2S, ESP32-S3' },
   ]
   if (isNaN(n) || n < 1 || n > details.length) return { text: `Usage: project [1-${details.length}]`, type: 'error' }
   const p = details[n - 1]
@@ -193,7 +192,7 @@ export default function Terminal({ className = '' }) {
     <div className={`rounded-lg font-mono ${className}`} style={{ border: '1px solid #1e293b', background: 'rgba(8,12,20,0.88)' }} onClick={() => inputRef.current?.focus()}>
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[#1e293b]" style={{ background: '#0a0e17' }}>
         <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" /><span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" /><span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
-        <span className="text-xs text-[#475569] ml-2">athibordee@portfolio:~/terminal</span>
+        <span className="text-xs text-[#475569] ml-2">9vxt@portfolio:~/terminal</span>
       </div>
       <div className="p-4 h-56 sm:h-64 overflow-y-auto" ref={scrollRef}>
         {history.map((line, i) => renderLine(line, i))}

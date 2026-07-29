@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { playShutdown } from './SoundEngine'
 
 const lines = [
   'init: beginning shutdown sequence...',
@@ -19,6 +20,7 @@ export default function ShutdownScreen({ onClose }) {
   const doneRef = useRef(false)
 
   useEffect(() => {
+    playShutdown()
     lines.forEach((line, i) => setTimeout(() => setVisibleLines((p) => [...p, i]), 80 + i * 220))
     const timer = setTimeout(() => { doneRef.current = true; setTimeout(onClose, 400) }, 80 + lines.length * 220 + 1200)
     return () => clearTimeout(timer)
