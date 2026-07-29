@@ -32,7 +32,7 @@ fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) ->
   let world = p.pos * sim.scale;
   let rad = p.radius * sim.scale;
   var out: VOut;
-  out.pos = vec4f(world.x + corner.x * rad, world.y + corner.y * rad * sim.aspect, 0.0, 1.0);
+  out.pos = vec4f(world.x + corner.x * rad, (world.y + corner.y * rad) * sim.aspect, 0.0, 1.0);
   out.col = p.color;
   out.uv = corner;
   out.ii = ii;
@@ -223,6 +223,20 @@ async function initSolarGPU(canvas, maxPlanets) {
   let running = true
   let elapsed = 0
   const w = await loadWasm()
+  // Pre‑fill trail history with initial planet positions (avoid origin‑streak)
+  {
+    const ptr = w.get_planets_ptr()
+    const init = new Float32Array(w.memory.buffer, ptr, w.planet_count() * 12)
+    for (let i = 0; i < w.planet_count(); i++) {
+      const base = i * TRAIL_LEN * 2
+      const px = init[i * 12], py = init[i * 12 + 1]
+      for (let j = 0; j < TRAIL_LEN; j++) {
+        trailXY[base + j * 2] = px
+        trailXY[base + j * 2 + 1] = py
+      }
+      trailCNT[i] = TRAIL_LEN
+    }
+  }
   let last = performance.now()
 
   const frame = () => {
