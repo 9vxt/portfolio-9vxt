@@ -5,6 +5,7 @@ import About from './components/About'
 import Skills from './components/Skills'
 import Learning from './components/Learning'
 import Projects from './components/Projects'
+import WasmDemo from './components/WasmDemo'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
 
@@ -18,6 +19,7 @@ export default function App() {
         <Skills />
         <Learning />
         <Projects />
+        <WasmDemo />
         <Contact />
         <Footer />
       </div>
