@@ -31,7 +31,7 @@
 | `Projects.jsx` | Project cards staggered with motion.div |
 | `ShowcaseWall.jsx` | Tech showcase grid with flip cards + featured projects |
 | `WasmDemo.jsx` | C++→WASM benchmark suite (fib, factorial, prime, count_primes) |
-| `WebGPUDemo.jsx` | Solar system simulation: C++ OOP (WASM) physics + WebGPU Canvas2D rendering (Canvas2D fallback) |
+| `WebGPUDemo.jsx` | Solar system simulation: C++ OOP (WASM) physics + WebGPU instanced rendering via storage+uniform buffers, Canvas2D fallback |
 | `WasmTerrain.jsx` | R3F component: heightmap from C++ WASM worker, deformable plane |
 | `Scene3D.jsx` | R3F scene: icosahedron, torus spiral, floating geos, rings, shader particles, WASM terrain |
 | `Terminal.jsx` | CLI terminal: 18 commands, up/down history, tab-completion, sound |
@@ -116,7 +116,22 @@
 - **Cause**: Global click handler plays `playClick()` only when `_enabled` is true, but `_enabled` starts false.
 - **Resolution**: Splash screen calls `enableSound()` before playing boot jingle. Additionally, an auto-enable timer (5s) was added to SoundEngine as a fallback.
 
-### 8. Splash Screen Boot Order
+### 9. WebGPU Black Screen — Physics Explosion (NaN from infall)
+- **File**: `wasm/solarsystem.cpp`
+- **Root Cause**: `G=10, M_sun=5000` with arbitrary `vy` values. Required orbital velocity at Earth (r=1.1) was `v = sqrt(50000/1.1) ≈ 213`, but code passed `vy=3.0`. Planet fell straight into the Sun, distance → 0, acceleration → infinity → NaN.
+- **Fix**: `G=1.0, M_sun=10.0`. Correct orbital velocities computed as `v = sqrt(G·M_sun/r)` in `init_solar()`. dt clamped to 0.02s in `step()`. Softening term (`dist² + 0.01`) and `minDist = radii sum` collision guard prevent singularities.
+
+### 10. WebGPU Black Screen — Clip Space Off-screen
+- **File**: `src/components/WebGPUDemo.jsx`
+- **Root Cause**: Planet coordinates up to x=3.6 (Neptune) far exceeded NDC [-1,1], rendering everything outside the viewport.
+- **Fix**: Added `SimParams` uniform buffer with `scale = 1.0/4.0 = 0.25` mapping world [-4,4] → NDC [-1,1]. WGSL vertex shader applies `p.pos * sim.scale` and `p.radius * sim.scale`.
+
+### 11. Stretched Triangles & Ribbon Shapes (Cross-Instance Triangles)
+- **File**: `src/components/WebGPUDemo.jsx`
+- **Root Cause**: `draw(maxPlanets*4, 1)` with `triangle-strip` topology. After planet N's quad (vertices 0-3), the GPU formed triangle (v2, v3, v0) connecting planet N+1's first vertex, creating enormous diagonal strips between distant planets.
+- **Fix**: Switched to instanced rendering `draw(4, maxPlanets, 0, 0)`. Each planet is an independent instance with 4 vertices forming one quad via `triangle-strip`. WebGPU never creates primitives across instance boundaries. Vertex shader uses `@builtin(instance_index)` for planet lookup and `@builtin(vertex_index)` for quad corner selection.
+
+### 12. Splash Screen Boot Order
 - **File**: `src/components/SplashScreen.jsx`
 - **Fix**: Boot line timings adjusted from 300ms to 200ms intervals for faster boot, last line appears at 2400ms, auto-dismiss at 6s.
 
@@ -140,11 +155,13 @@
 - Source code viewer toggle
 
 ### Solar System Simulation (C++ OOP + WASM)
-- 9-body N-body gravity simulation
+- 9-body N-body gravity simulation (G=1, M_sun=10, correct circular orbit velocities)
 - C++ classes: Vec2, Planet, SolarSystem
-- Compiled to WASM (6408 bytes), physics runs at ~60fps
-- Rendered via WebGPU (vertex shader with storage buffer) or Canvas2D fallback
+- Compiled to WASM (6356 bytes), physics runs at ~60fps
+- Rendered via WebGPU instanced rendering: `draw(4, count)` with storage buffer for per-planet data, uniform buffer for scale+aspect, `@builtin(instance_index)` for planet lookup
+- Canvas2D fallback when WebGPU unavailable
 - Sun has glow effect, planets have distinct colors and sizes
+- Scale uniform maps world [-4,4] → NDC [-1,1]; aspect uniform corrects for non-square canvas
 
 ### CLI Terminal
 - 18 commands: whoami, about, skills, projects, contact, ls, cat, echo, date, pwd, banner, neofetch, sudo, 42, mit, wasm, solar, clear, exit, help
