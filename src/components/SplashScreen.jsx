@@ -1,12 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
+import { enableSound, playBoot } from './SoundEngine'
+
+const banner = `
+ █████╗ ████████╗██╗  ██╗██╗██████╗  ██████╗ ██████╗ ██████╗ ███████╗███████╗
+██╔══██╗╚══██╔══╝██║  ██║██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
+███████║   ██║   ███████║██║██║  ██║██║   ██║██████╔╝██║  ██║█████╗  █████╗
+██╔══██║   ██║   ██╔══██║██║██║  ██║██║   ██║██╔══██╗██║  ██║██╔══╝  ██╔══╝
+██║  ██║   ██║   ██║  ██║██║██████╔╝╚██████╔╝██████╔╝██████╔╝███████╗███████╗
+╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
+`
 
 const bootLines = [
   { text: 'Initializing portfolio kernel...', delay: 200 },
-  { text: 'Loading WASM terrain module...', delay: 400 },
-  { text: 'Compiling C++ shaders (clang --target=wasm32)...', delay: 600 },
+  { text: 'Loading WASM terrain module (C++ → clang --target=wasm32)...', delay: 400 },
+  { text: 'Compiling 3D shaders (GLSL + WGSL)...', delay: 600 },
   { text: 'Initializing WebGPU compute pipeline...', delay: 800 },
   { text: 'Starting Three.js renderer (R3F v9)...', delay: 1000 },
-  { text: 'Mounting file system: /home/athibordee/portfolio', delay: 1200 },
+  { text: 'Mounting /home/athibordee/portfolio', delay: 1200 },
   { text: 'Starting ambient sound engine...', delay: 1400 },
   { text: 'Calibrating cursor glow field...', delay: 1600 },
   { text: 'All systems operational.', delay: 2000 },
@@ -24,14 +34,12 @@ export default function SplashScreen({ onFinish }) {
   useEffect(() => {
     if (started.current) return
     started.current = true
-    const timers = []
     bootLines.forEach((line, i) => {
-      timers.push(setTimeout(() => {
+      setTimeout(() => {
         setVisibleLines((prev) => [...prev, i])
         if (i === bootLines.length - 1) setDone(true)
-      }, line.delay))
+      }, line.delay)
     })
-    return () => timers.forEach(clearTimeout)
   }, [])
 
   useEffect(() => {
@@ -39,6 +47,8 @@ export default function SplashScreen({ onFinish }) {
     let idx = 0
     const id = setInterval(() => { idx++; setShowCursor(idx % 2 === 0) }, 530)
     const handler = () => {
+      enableSound()
+      playBoot()
       setFading(true)
       setTimeout(onFinish, 600)
     }
@@ -54,25 +64,17 @@ export default function SplashScreen({ onFinish }) {
       style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
     >
       <div className="max-w-lg w-full px-6">
-        <pre className="text-[#3b82f6] text-[8px] sm:text-[10px] leading-tight mb-6 whitespace-pre text-center">
-{` █████╗ ████████╗██╗  ██╗██╗██████╗  ██████╗ ██████╗ ██████╗ ███████╗███████╗
-██╔══██╗╚══██╔══╝██║  ██║██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
-███████║   ██║   ███████║██║██║  ██║██║   ██║██████╔╝██║  ██║█████╗  █████╗
-██╔══██║   ██║   ██╔══██║██║██║  ██║██║   ██║██╔══██╗██║  ██║██╔══╝  ██╔══╝
-██║  ██║   ██║   ██║  ██║██║██████╔╝╚██████╔╝██████╔╝██████╔╝███████╗███████╗
-╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝`}
-        </pre>
+        <pre className="text-[#3b82f6] text-[8px] sm:text-[10px] leading-tight mb-6 whitespace-pre text-center">{banner}</pre>
         <div className="space-y-1">
           {bootLines.map((line, i) => {
             if (visibleLines.includes(i)) {
               const isLast = i === bootLines.length - 1
               return (
                 <p key={i} className="font-mono text-xs">
-                  <span className="text-[#34d399]">[ {(i + 1).toString().padStart(2, '0')}:00 ]</span>{' '}
+                  <span className="text-[#34d399]">[{(i + 1).toString().padStart(2, '0')}:00]</span>{' '}
                   {isLast ? (
                     <span className="text-[#3b82f6]">
-                      {line.text}
-                      {showCursor && <span className="text-[#22d3ee] blink">_</span>}
+                      {line.text}{showCursor && <span className="text-[#22d3ee] blink">_</span>}
                     </span>
                   ) : (
                     <span className="text-[#94a3b8]">{line.text}</span>
@@ -90,7 +92,7 @@ export default function SplashScreen({ onFinish }) {
           </div>
         )}
       </div>
-      <p className="absolute bottom-4 text-[9px] font-mono text-[#1e293b]">athibordee@portfolio:v1.0 — MIT 2026</p>
+      <p className="absolute bottom-4 text-[9px] font-mono text-[#1e293b]">Athibordee Thongboonma · portfolio v1.0 · MIT 2026</p>
     </div>
   )
 }

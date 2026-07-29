@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const links = [
-  { label: '_about', href: '#about' },
-  { label: '_skills', href: '#skills' },
-  { label: '_learning', href: '#learning' },
-  { label: '_projects', href: '#projects' },
-  { label: '_wasm', href: '#wasm' },
-  { label: '_contact', href: '#contact' },
+  { label: '_about', href: '#about', section: 'about' },
+  { label: '_skills', href: '#skills', section: 'skills' },
+  { label: '_learning', href: '#learning', section: 'learning' },
+  { label: '_projects', href: '#projects', section: 'projects' },
+  { label: '_wasm', href: '#wasm', section: 'wasm' },
+  { label: '_gpu', href: '#gpu', section: 'gpu' },
+  { label: '_contact', href: '#contact', section: 'contact' },
 ]
 
 function Clock() {
@@ -24,13 +25,27 @@ function Clock() {
   )
 }
 
+const sectionIds = links.map(l => l.section)
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [active, setActive] = useState('')
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60)
+    const onScroll = () => {
+      setScrolled(window.scrollY > 60)
+      const mid = window.scrollY + window.innerHeight / 2
+      for (const id of sectionIds) {
+        const el = document.getElementById(id)
+        if (el) {
+          const top = el.offsetTop; const bot = top + el.offsetHeight
+          if (mid >= top && mid < bot) { setActive(id); return }
+        }
+      }
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -55,12 +70,17 @@ export default function Navbar() {
           </a>
 
           <div className="hidden md:flex items-center gap-1">
-            {links.map((l) => (
-              <a key={l.href} href={l.href}
-                className="px-3 py-1.5 text-xs text-[#64748b] hover:text-[#3b82f6] hover:bg-[#1e293b]/50 rounded-md transition-all">
-                {l.label}
-              </a>
-            ))}
+            {links.map((l) => {
+              const isActive = active === l.section
+              return (
+                <a key={l.href} href={l.href}
+                  className={`px-3 py-1.5 text-xs rounded-md transition-all ${
+                    isActive ? 'text-[#3b82f6] bg-[#1e293b]/70' : 'text-[#64748b] hover:text-[#3b82f6] hover:bg-[#1e293b]/50'
+                  }`}>
+                  {l.label}
+                </a>
+              )
+            })}
           </div>
 
           <div className="flex items-center gap-3">
@@ -91,7 +111,7 @@ export default function Navbar() {
             <div className="px-4 pb-3 space-y-1">
               {links.map((l) => (
                 <a key={l.href} href={l.href} onClick={() => setOpen(false)}
-                  className="block py-1.5 text-xs text-[#64748b] hover:text-[#3b82f6] transition-colors">
+                  className={`block py-1.5 text-xs transition-colors ${active === l.section ? 'text-[#3b82f6]' : 'text-[#64748b] hover:text-[#3b82f6]'}`}>
                   {l.label}
                 </a>
               ))}
