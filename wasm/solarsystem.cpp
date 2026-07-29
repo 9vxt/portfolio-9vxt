@@ -13,6 +13,12 @@ struct Vec2 {
     for (int i = 0; i < 6; i++) r = (r + a/r) * 0.5f;
     return r;
   }
+  static float sqrtf(float a) {
+    if (a <= 0) return 0;
+    float r = a;
+    for (int i = 0; i < 6; i++) r = (r + a/r) * 0.5f;
+    return r;
+  }
 };
 
 class Planet {
@@ -28,6 +34,7 @@ public:
 class SolarSystem {
   Planet planets[32];
   int count;
+  static constexpr float G = 1.0f;
 public:
   SolarSystem() : count(0) {}
   void add(float px, float py, float vx, float vy, float m, float rad, float cr, float cg, float cb) {
@@ -35,15 +42,16 @@ public:
     planets[count++] = Planet(px, py, vx, vy, m, rad, cr, cg, cb);
   }
   void step(float dt) {
-    const float G = 10.0f;
+    if (dt > 0.02f) dt = 0.02f;
     for (int i = 0; i < count; i++) {
       Vec2 acc;
       for (int j = 0; j < count; j++) {
         if (i == j) continue;
         Vec2 diff = planets[j].pos - planets[i].pos;
         float dist = diff.length();
-        if (dist < 0.01f) continue;
-        float force = G * planets[j].mass / (dist * dist);
+        float minDist = planets[i].radius + planets[j].radius;
+        if (dist < minDist) dist = minDist;
+        float force = G * planets[j].mass / (dist * dist + 0.01f);
         acc = acc + Vec2(diff.x / dist * force, diff.y / dist * force);
       }
       planets[i].vel = planets[i].vel + acc * dt;
@@ -53,8 +61,6 @@ public:
   int getCount() const { return count; }
   float getX(int i) const { return i < count ? planets[i].pos.x : 0; }
   float getY(int i) const { return i < count ? planets[i].pos.y : 0; }
-  float getVelX(int i) const { return i < count ? planets[i].vel.x : 0; }
-  float getVelY(int i) const { return i < count ? planets[i].vel.y : 0; }
   float getRadius(int i) const { return i < count ? planets[i].radius : 0; }
   float getMass(int i) const { return i < count ? planets[i].mass : 0; }
   float getRed(int i) const { return i < count ? planets[i].r : 0; }
@@ -64,18 +70,31 @@ public:
 
 static SolarSystem sys;
 
+static float orbit_v(float r, float central_mass) {
+  return Vec2::sqrtf(1.0f * central_mass / r);
+}
+
+struct PlanetInit { float x, radius, mass; float r, g, b; };
+
 extern "C" {
   void init_solar() {
     sys = SolarSystem();
-    sys.add(0, 0, 0, 0, 5000, 0.35, 1.0, 0.8, 0.2);     // Sun
-    sys.add(0.5, 0, 0, 4.5, 0.3, 0.03, 0.7, 0.7, 0.7);    // Mercury
-    sys.add(0.8, 0, 0, 3.5, 0.8, 0.06, 0.9, 0.7, 0.3);     // Venus
-    sys.add(1.1, 0, 0, 3.0, 1.0, 0.08, 0.2, 0.5, 1.0);     // Earth
-    sys.add(1.4, 0, 0, 2.7, 0.6, 0.055, 1.0, 0.3, 0.2);    // Mars
-    sys.add(1.9, 0, 0, 2.1, 2.0, 0.15, 0.8, 0.6, 0.4);     // Jupiter
-    sys.add(2.4, 0, 0, 1.9, 1.5, 0.12, 0.9, 0.8, 0.6);     // Saturn
-    sys.add(3.0, 0, 0, 1.65, 0.9, 0.09, 0.5, 0.7, 0.9);    // Uranus
-    sys.add(3.6, 0, 0, 1.5, 0.8, 0.085, 0.4, 0.4, 0.9);    // Neptune
+    const float M_SUN = 10.0f;
+    sys.add(0, 0, 0, 0, M_SUN, 0.35f, 1.0f, 0.8f, 0.2f);
+    PlanetInit data[8] = {
+      {0.5f,  0.030f, 0.001f, 0.7f, 0.7f, 0.7f},
+      {0.8f,  0.060f, 0.003f, 0.9f, 0.7f, 0.3f},
+      {1.1f,  0.080f, 0.005f, 0.2f, 0.5f, 1.0f},
+      {1.4f,  0.055f, 0.003f, 1.0f, 0.3f, 0.2f},
+      {1.9f,  0.150f, 0.020f, 0.8f, 0.6f, 0.4f},
+      {2.4f,  0.120f, 0.015f, 0.9f, 0.8f, 0.6f},
+      {3.0f,  0.090f, 0.010f, 0.5f, 0.7f, 0.9f},
+      {3.6f,  0.085f, 0.008f, 0.4f, 0.4f, 0.9f},
+    };
+    for (int i = 0; i < 8; i++) {
+      float vy = orbit_v(data[i].x, M_SUN);
+      sys.add(data[i].x, 0, 0, vy, data[i].mass, data[i].radius, data[i].r, data[i].g, data[i].b);
+    }
   }
   void step_solar(float dt) { sys.step(dt); }
   int planet_count() { return sys.getCount(); }

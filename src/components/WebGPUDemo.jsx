@@ -13,9 +13,11 @@ async function loadWasm() {
 }
 
 const wgsl = `
-struct PlanetData { pos: vec2<f32>, radius: f32, pad: f32, color: vec3<f32>, pad2: f32 }
+struct PlanetData { pos: vec2<f32>, radius: f32, _pad: f32, color: vec3<f32>, _pad2: f32 }
+struct SimParams { scale: f32, aspect: f32, _pad: vec2<f32> }
 
 @group(0) @binding(0) var<storage, read> planets: array<PlanetData>;
+@group(0) @binding(1) var<uniform> sim: SimParams;
 
 struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> }
 
@@ -24,14 +26,12 @@ fn vertMain(@builtin(vertex_index) vi: u32) -> VOut {
   let id = vi / 4u;
   let vert = vi % 4u;
   let p = planets[id];
-  let px = p.pos.x;
-  let py = p.pos.y;
-  let rad = p.radius;
-  let aspect = 1.6;
+  let worldPos = p.pos * sim.scale;
+  let rad = p.radius * sim.scale;
   let ox = select(rad, -rad, vert == 0u || vert == 3u);
   let oy = select(rad, -rad, vert == 0u || vert == 1u);
   var out: VOut;
-  out.pos = vec4(px + ox, py + oy * aspect, 0.0, 1.0);
+  out.pos = vec4(worldPos.x + ox, worldPos.y + oy * sim.aspect, 0.0, 1.0);
   out.col = p.color;
   return out;
 }
@@ -50,10 +50,15 @@ async function initSolarGPU(canvas, maxPlanets) {
   const ctx = canvas.getContext('webgpu')
   ctx.configure({ device, format: 'bgra8unorm', alphaMode: 'premultiplied' })
 
-  const floatsPerPlanet = 8 // pos(2)+radius+pad(1)+color(3)+pad2(1)
+  const floatsPerPlanet = 8
   const buf = device.createBuffer({
     size: maxPlanets * floatsPerPlanet * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  })
+
+  const uniformBuf = device.createBuffer({
+    size: 16,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
 
   const mod = device.createShaderModule({ code: wgsl })
@@ -61,6 +66,7 @@ async function initSolarGPU(canvas, maxPlanets) {
   const layout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
+      { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } },
     ]
   })
   const pipe = device.createRenderPipeline({
@@ -74,10 +80,20 @@ async function initSolarGPU(canvas, maxPlanets) {
   })
   const bg = device.createBindGroup({
     layout,
-    entries: [{ binding: 0, resource: { buffer: buf } }],
+    entries: [
+      { binding: 0, resource: { buffer: buf } },
+      { binding: 1, resource: { buffer: uniformBuf } },
+    ],
   })
 
   const stageData = new Float32Array(maxPlanets * floatsPerPlanet)
+  const uniformData = new Float32Array(4)
+  const scale = 1.0 / 4.0
+  const aspect = canvas.width / canvas.height
+  uniformData[0] = scale
+  uniformData[1] = aspect
+  device.queue.writeBuffer(uniformBuf, 0, uniformData)
+
   let running = true
 
   const w = await loadWasm()
@@ -86,7 +102,7 @@ async function initSolarGPU(canvas, maxPlanets) {
   const frame = () => {
     if (!running) return
     const now = performance.now()
-    const dt = Math.min((now - last) * 0.001, 0.05)
+    const dt = Math.min((now - last) * 0.001, 0.02)
     last = now
 
     w.step_solar(dt)
@@ -141,7 +157,6 @@ export default function WebGPUDemo() {
     return () => { if (cleanupRef.current) cleanupRef.current() }
   }, [])
 
-  // Canvas2D fallback when WebGPU unavailable
   useEffect(() => {
     if (supported !== false) return
     const canvas = canvasRef.current
@@ -154,21 +169,21 @@ export default function WebGPUDemo() {
       if (!running) return
       const w = await loadWasm()
       const now = performance.now()
-      w.step_solar(Math.min((now - last) * 0.001, 0.05))
+      w.step_solar(Math.min((now - last) * 0.001, 0.02))
       last = now
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       const cnt = w.planet_count()
       for (let i = 0; i < cnt; i++) {
-        const px = w.planet_x(i) * canvas.width / 2.6 + canvas.width / 2
-        const py = w.planet_y(i) * canvas.height / 2.6 + canvas.height / 2
-        const rad = Math.max(2, w.planet_radius(i) * canvas.width / 4)
+        const px = w.planet_x(i) * canvas.width / 8 + canvas.width / 2
+        const py = w.planet_y(i) * canvas.height / 8 + canvas.height / 2
+        const rad = Math.max(2, w.planet_radius(i) * canvas.width / 8)
         ctx.beginPath()
         ctx.arc(px, py, rad, 0, Math.PI * 2)
         ctx.fillStyle = `rgb(${w.planet_r(i)*255|0},${w.planet_g(i)*255|0},${w.planet_b(i)*255|0})`
         ctx.fill()
         if (i === 0) {
           ctx.beginPath()
-          ctx.arc(px, py, rad + 4, 0, Math.PI * 2)
+          ctx.arc(px, py, rad + 6, 0, Math.PI * 2)
           ctx.fillStyle = 'rgba(255,200,50,0.15)'
           ctx.fill()
         }
