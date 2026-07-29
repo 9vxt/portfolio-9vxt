@@ -16,8 +16,11 @@ import ScrollProgress from './components/ScrollProgress'
 import CursorGlow from './components/CursorGlow'
 import Scene3D from './components/Scene3D'
 import ShowcaseWall from './components/ShowcaseWall'
+import SplashScreen from './components/SplashScreen'
+import SoundToggle from './components/SoundEngine'
 
 export default function App() {
+  const [booted, setBooted] = useState(false)
   const [scrollP, setScrollP] = useState(0)
   const scrollRaf = useRef(null)
 
@@ -35,6 +38,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      {!booted && <SplashScreen onFinish={() => setBooted(true)} />}
       <div className="bg-[#080c14] text-[#f1f5f9] min-h-screen">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }}>
@@ -59,6 +63,7 @@ export default function App() {
         <FpsMonitor />
         <ScrollProgress />
         <CursorGlow />
+        <SoundToggle />
       </div>
     </ErrorBoundary>
   )

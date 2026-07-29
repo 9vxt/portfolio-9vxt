@@ -2,55 +2,72 @@ import { useRef, useEffect, useState } from 'react'
 import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
 
-const wgslModule = `
-struct Particle { pos: vec2<f32>, vel: vec2<f32> }
+const wgslBlackHole = `
+struct Particle { pos: vec2<f32>, vel: vec2<f32>, color: vec3<f32>, life: f32 }
 
-@group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
+@group(0) @binding(0) var<storage, read_write> p: array<Particle>;
 @group(0) @binding(1) var<uniform> time: f32;
+
+fn gravity(pos: vec2<f32>) -> vec2<f32> {
+  let r = length(pos);
+  let bh = 80.0;
+  let soften = 0.12;
+  return -normalize(pos) * bh / (r * r + soften);
+}
 
 @compute @workgroup_size(64)
 fn compMain(@builtin(global_invocation_id) id: vec3<u32>) {
   let i = id.x;
-  let n = arrayLength(&particles);
+  let n = arrayLength(&p);
   if (i >= n) { return; }
-  var p = particles[i];
-  p.vel.x += (sin(p.pos.y * 0.5 + time) - p.pos.x * 0.08) * 0.003;
-  p.vel.y += (cos(p.pos.x * 0.5 + time * 0.7) - p.pos.y * 0.08) * 0.003;
-  p.pos += p.vel;
-  if (p.pos.x > 1.3) { p.pos.x = -1.3; }
-  if (p.pos.x < -1.3) { p.pos.x = 1.3; }
-  if (p.pos.y > 1.0) { p.pos.y = -1.0; }
-  if (p.pos.y < -1.0) { p.pos.y = 1.0; }
-  particles[i] = p;
+  var pt = p[i];
+
+  let grav = gravity(pt.pos);
+  pt.vel += grav * 0.003;
+  pt.vel *= 0.998;
+  pt.pos += pt.vel;
+  pt.life += 0.005;
+
+  let r = length(pt.pos);
+  let velLen = length(pt.vel);
+  pt.color = vec3(
+    0.3 + 0.7 / (1.0 + r * 2.0),
+    0.2 + 0.5 / (1.0 + r * 1.5),
+    0.1 + 0.3 / (1.0 + r)
+  );
+  pt.color *= 0.6 + 0.4 * sin(pt.life * 2.0);
+
+  if (r < 0.12 || r > 2.5) {
+    let a = atan2(pt.pos.y, pt.pos.x) + 0.3 + f32(i) * 0.001;
+    let nr = 0.3 + 0.1 * f32(i % 17) + 0.05 * sin(time + f32(i) * 0.01);
+    pt.pos = vec2(cos(a), sin(a)) * nr;
+    pt.vel = normalize(vec2(-pt.pos.y, pt.pos.x)) * sqrt(80.0 / nr) * 0.4;
+    pt.life = 0.0;
+  }
+  p[i] = pt;
 }
 
-struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> }
-
 @vertex
-fn vertMain(@builtin(vertex_index) vi: u32) -> VOut {
+fn vertMain(@builtin(vertex_index) vi: u32) -> @builtin(position) vec4<f32> {
   let i = vi / 4u;
   let vert = vi % 4u;
-  let cols = 64u;
-  let rows = 48u;
-  let px = f32(i % cols) / f32(cols) * 2.6 - 1.3;
-  let py = f32(i / cols) / f32(rows) * 2.0 - 1.0;
-  let sz = 0.012;
-  var out: VOut;
-  if (vert == 0u) { out.pos = vec4(px - sz, py - sz, 0.0, 1.0); }
-  else if (vert == 1u) { out.pos = vec4(px + sz, py - sz, 0.0, 1.0); }
-  else if (vert == 2u) { out.pos = vec4(px + sz, py + sz, 0.0, 1.0); }
-  else { out.pos = vec4(px - sz, py + sz, 0.0, 1.0); }
-  out.col = vec3(0.23, 0.51, 0.96);
-  return out;
+  let sz = 0.008;
+  let idx = f32(i);
+  let px = (idx - 1536.0) / 1536.0 * 2.6;
+  let py = (idx - 1536.0) / 1536.0 * 2.0;
+  if (vert == 0u) { return vec4(px - sz, py - sz, 0.0, 1.0); }
+  if (vert == 1u) { return vec4(px + sz, py - sz, 0.0, 1.0); }
+  if (vert == 2u) { return vec4(px + sz, py + sz, 0.0, 1.0); }
+  return vec4(px - sz, py + sz, 0.0, 1.0);
 }
 
 @fragment
-fn fragMain(@location(0) col: vec3<f32>) -> @location(0) vec4<f32> {
-  return vec4(col, 0.5);
+fn fragMain() -> @location(0) vec4<f32> {
+  return vec4(0.9, 0.4, 0.1, 0.8);
 }
 `
 
-async function initWebGPU(canvas, particleCount) {
+async function initBlackHole(canvas, count) {
   if (!navigator.gpu) throw new Error('WebGPU not supported')
   const adapter = await navigator.gpu.requestAdapter()
   if (!adapter) throw new Error('No GPU adapter')
@@ -58,18 +75,23 @@ async function initWebGPU(canvas, particleCount) {
   const ctx = canvas.getContext('webgpu')
   ctx.configure({ device, format: 'bgra8unorm', alphaMode: 'premultiplied' })
 
-  const particles = new Float32Array(particleCount * 4)
-  for (let i = 0; i < particleCount; i++) {
-    particles[i * 4] = (Math.random() - 0.5) * 2.4
-    particles[i * 4 + 1] = (Math.random() - 0.5) * 1.8
-    particles[i * 4 + 2] = (Math.random() - 0.5) * 0.01
-    particles[i * 4 + 3] = (Math.random() - 0.5) * 0.01
+  const data = new Float32Array(count * (2 + 2 + 3 + 1))
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2
+    const r = 0.3 + Math.random() * 1.5
+    data[i*8] = Math.cos(a) * r
+    data[i*8+1] = Math.sin(a) * r
+    data[i*8+2] = Math.cos(a + Math.PI/2) * Math.sqrt(80 / r) * 0.4
+    data[i*8+3] = Math.sin(a + Math.PI/2) * Math.sqrt(80 / r) * 0.4
+    data[i*8+4] = 0.9; data[i*8+5] = 0.5; data[i*8+6] = 0.2
+    data[i*8+7] = 0
   }
-  const buf = device.createBuffer({ size: particles.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, mappedAtCreation: true })
-  new Float32Array(buf.getMappedRange()).set(particles); buf.unmap()
+
+  const buf = device.createBuffer({ size: data.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, mappedAtCreation: true })
+  new Float32Array(buf.getMappedRange()).set(data); buf.unmap()
   const timeBuf = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
 
-  const mod = device.createShaderModule({ code: wgslModule })
+  const mod = device.createShaderModule({ code: wgslBlackHole })
 
   const compBind = device.createBindGroupLayout({
     entries: [
@@ -97,8 +119,7 @@ async function initWebGPU(canvas, particleCount) {
   })
 
   const timeData = new Float32Array([0])
-  let running = true
-  let last = performance.now()
+  let running = true; let last = performance.now()
 
   const frame = () => {
     if (!running) return
@@ -110,7 +131,7 @@ async function initWebGPU(canvas, particleCount) {
     const cpass = encoder.beginComputePass()
     cpass.setPipeline(compPipe)
     cpass.setBindGroup(0, compBG)
-    cpass.dispatchWorkgroups(Math.ceil(particleCount / 64))
+    cpass.dispatchWorkgroups(Math.ceil(count / 64))
     cpass.end()
 
     const tex = ctx.getCurrentTexture()
@@ -122,9 +143,8 @@ async function initWebGPU(canvas, particleCount) {
       }],
     })
     rpass.setPipeline(renderPipe)
-    rpass.draw(particleCount * 4, 1, 0, 0)
+    rpass.draw(count * 4, 1, 0, 0)
     rpass.end()
-
     device.queue.submit([encoder.finish()])
     requestAnimationFrame(frame)
   }
@@ -144,12 +164,11 @@ export default function WebGPUDemo() {
     if (!navigator.gpu) return
     const canvas = canvasRef.current
     if (!canvas) return
-    initWebGPU(canvas, 3072).then((cleanup) => {
+    initBlackHole(canvas, 3072).then((cleanup) => {
       cleanupRef.current = cleanup
       setError('')
     }).catch((e) => {
-      setError(e.message)
-      setSupported(false)
+      setError(e.message); setSupported(false)
     })
     return () => { if (cleanupRef.current) cleanupRef.current() }
   }, [])
@@ -164,8 +183,8 @@ export default function WebGPUDemo() {
           className="text-center mb-8"
         >
           <p className="text-xs text-[#64748b] font-mono mb-2 tracking-widest"><span className="text-[#22d3ee]">//</span> gpu_compute</p>
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f5f9] mb-3 font-mono">webgpu<span className="text-[#22d3ee]">_</span>compute</h2>
-          <p className="text-xs font-mono text-[#64748b]">GPU compute shader particle simulation — 3,072 particles on device memory</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#f1f5f9] mb-3 font-mono">blackhole<span className="text-[#22d3ee]">_</span>sim</h2>
+          <p className="text-xs font-mono text-[#64748b]">Black hole accretion disk — 3,072 particles simulated via WebGPU compute shaders (WGSL)</p>
         </motion.div>
 
         <motion.div
@@ -179,41 +198,31 @@ export default function WebGPUDemo() {
             <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
             <span className="text-xs text-[#475569] font-mono ml-2">
-              {supported === null ? 'checking...' : supported ? 'wgpu compute@particles' : 'webgpu unavailable'}
+              {supported === null ? 'checking...' : supported ? 'blackhole@accretion_disk' : 'webgpu unavailable'}
             </span>
             <span className="ml-auto text-[10px] text-[#475569] font-mono">
-              {supported ? <span className="text-[#34d399]">● running on GPU</span> : <span className="text-[#f59e0b]">● falling back</span>}
+              {supported ? <span className="text-[#34d399]">● GPU compute active</span> : <span className="text-[#f59e0b]">● falling back</span>}
             </span>
           </div>
           {!supported && (
             <div className="p-6 text-center">
               <p className="text-xs font-mono text-[#64748b] mb-2">
-                {error ? `Error: ${error}` : 'WebGPU is not available in this browser.'}
+                {error ? `Error: ${error}` : 'WebGPU unavailable'}
               </p>
-              <p className="text-[10px] font-mono text-[#475569]">
-                Try Chrome 113+, Edge 113+, or enable <span className="text-[#3b82f6]">#enable-unsafe-webgpu</span> in about://flags
-              </p>
+              <p className="text-[10px] font-mono text-[#475569]">Chrome 113+ or Edge 113+ required. Enable <span className="text-[#3b82f6]">#enable-unsafe-webgpu</span></p>
             </div>
           )}
           <canvas ref={canvasRef} width={512} height={320} className="w-full h-auto rounded bg-black" style={{ aspectRatio: '512/320' }} />
           <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded">
-              <span className="text-[#475569]">API: </span><span className="text-[#22d3ee]">WebGPU</span>
-            </div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded">
-              <span className="text-[#475569]">Shader: </span><span className="text-[#34d399]">WGSL</span>
-            </div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded">
-              <span className="text-[#475569]">Particles: </span><span className="text-[#f1f5f9]">3,072</span>
-            </div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded">
-              <span className="text-[#475569]">Workgroups: </span><span className="text-[#f1f5f9]">48</span>
-            </div>
+            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">API: </span><span className="text-[#22d3ee]">WebGPU</span></div>
+            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Code: </span><span className="text-[#34d399]">WGSL compute</span></div>
+            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Particles: </span><span className="text-[#f1f5f9]">3,072</span></div>
+            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Physics: </span><span className="text-[#f59e0b]">N-body gravity</span></div>
           </div>
           <details className="mt-3">
             <summary className="text-[10px] font-mono text-[#475569] cursor-pointer hover:text-[#64748b]">view compute shader (WGSL)</summary>
             <pre className="text-[10px] font-mono text-[#94a3b8] whitespace-pre-wrap mt-2 p-3 bg-[#0a0e17] border border-[#1e293b] rounded" style={{ maxHeight: 200, overflow: 'auto' }}>
-{wgslModule.trim()}
+{wgslBlackHole.trim()}
             </pre>
           </details>
         </motion.div>
