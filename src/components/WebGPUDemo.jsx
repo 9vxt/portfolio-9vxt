@@ -4,6 +4,52 @@ import { motion } from 'framer-motion'
 
 const TRAIL_LEN = 40
 
+const CppSource = `struct Vec2 {
+  float x, y;
+  Vec2() : x(0), y(0) {}
+  Vec2(float x, float y) : x(x), y(y) {}
+  Vec2 operator+(const Vec2& v) const { return Vec2(x+v.x, y+v.y); }
+  Vec2 operator-(const Vec2& v) const { return Vec2(x-v.x, y-v.y); }
+  Vec2 operator*(float s) const { return Vec2(x*s, y*s); }
+  Vec2& operator+=(const Vec2& v) { x+=v.x; y+=v.y; return *this; }
+  float length() const { /* Newton sqrt — 6 iterations */ return 0; }
+  static float sqrtf(float a) { /* Newton sqrt — 6 iterations */ return 0; }
+};
+
+struct PlanetGPUData {
+  float px, py;       // vec2f   offset  0  — pos
+  float vx, vy;       // vec2f   offset  8  — _vel
+  float mass;          // f32     offset 16
+  float radius;        // f32     offset 20
+  float _pad1, _pad2;  // vec2f   offset 24
+  float r, g, b;       // vec3f   offset 32
+  float _pad3;         // f32     offset 44
+}; // 48 bytes = 12 floats, align 16
+
+class SolarSystem {
+  PlanetGPUData planets[32];
+  int count;
+  static constexpr float G = 1.0f;
+public:
+  SolarSystem() : count(0) {}
+  void add(float px, float py, float vx, float vy,
+           float m, float rad, float cr, float cg, float cb) { /* ... */ }
+  void step(float dt) { /* N-body gravity, dt clamped to 0.02s */ }
+  int getCount() const { return count; }
+  PlanetGPUData* getPtr() { return planets; }
+};
+
+static SolarSystem sys;
+
+extern "C" {
+  void init_solar() {
+    // Sun + 8 planets with circular orbital velocities
+  }
+  void step_solar(float dt) { sys.step(dt); }
+  int planet_count() { return sys.getCount(); }
+  float* get_planets_ptr() { return &(sys.getPtr()->px); }
+}`
+
 let wasm = null
 async function loadWasm() {
   if (wasm) return wasm
@@ -203,22 +249,23 @@ async function initSolarGPU(canvas, maxPlanets) {
     ],
   })
 
-  // Linear trail arrays: each planet has an array of [x, y] pairs.
-  // Newest appended to end, oldest shifted from front — no ring buffer wrap.
   const trails = Array.from({ length: maxPlanets }, () => [])
 
   let running = true
   let elapsed = 0
   const w = await loadWasm()
-  // Pre-fill every trail point with the planet's starting coordinate
-  {
+
+  function initTrails() {
     const ptr = w.get_planets_ptr()
     const init = new Float32Array(w.memory.buffer, ptr, w.planet_count() * 12)
     for (let i = 0; i < w.planet_count(); i++) {
+      trails[i] = []
       const px = init[i * 12], py = init[i * 12 + 1]
       for (let j = 0; j < TRAIL_LEN; j++) trails[i].push([px, py])
     }
   }
+  initTrails()
+
   let last = performance.now()
 
   const frame = () => {
@@ -235,13 +282,11 @@ async function initSolarGPU(canvas, maxPlanets) {
     const src = new Float32Array(w.memory.buffer, ptr, cnt * 12)
     device.queue.writeBuffer(planetBuf, 0, src)
 
-    // Append current position to each planet's trail, drop oldest if full
     for (let i = 0; i < cnt; i++) {
       trails[i].push([src[i * 12], src[i * 12 + 1]])
       if (trails[i].length > TRAIL_LEN) trails[i].shift()
     }
 
-    // Linearize trail data: index 0 = oldest (age 0), index N-1 = newest (age 1)
     trailStage.fill(0)
     for (let i = 0; i < cnt; i++) {
       const pts = trails[i]
@@ -250,13 +295,8 @@ async function initSolarGPU(canvas, maxPlanets) {
         const dst = (i * TRAIL_LEN + j) * 8
         const age = j < n && n > 1 ? j / (n - 1) : 0
         let px, py
-        if (j < n) {
-          px = pts[j][0]
-          py = pts[j][1]
-        } else {
-          px = pts[n - 1][0]
-          py = pts[n - 1][1]
-        }
+        if (j < n) { px = pts[j][0]; py = pts[j][1] }
+        else { px = pts[n - 1][0]; py = pts[n - 1][1] }
         trailStage[dst] = px
         trailStage[dst + 1] = py
         trailStage[dst + 2] = age
@@ -267,7 +307,6 @@ async function initSolarGPU(canvas, maxPlanets) {
     }
     device.queue.writeBuffer(trailBuf, 0, trailStage)
 
-    // Uniforms — aspect computed live from current canvas dimensions
     const aspect = canvas.width / canvas.height
     const simStage = new Float32Array([scale, aspect, elapsed, 0])
     device.queue.writeBuffer(simBuf, 0, simStage)
@@ -276,7 +315,6 @@ async function initSolarGPU(canvas, maxPlanets) {
     const enc = device.createCommandEncoder()
     const tex = ctx.getCurrentTexture()
 
-    // Pass 1: Background starfield (covers full NDC via correctly-wound triangle)
     const bp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'clear', clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }],
     })
@@ -285,18 +323,14 @@ async function initSolarGPU(canvas, maxPlanets) {
     bp.draw(3, 1, 0, 0)
     bp.end()
 
-    // Pass 2: Trails (one independent line-strip per planet)
     const tp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
     tp.setPipeline(trailPipe)
     tp.setBindGroup(0, trailBG)
-    for (let i = 0; i < cnt; i++) {
-      tp.draw(TRAIL_LEN, 1, 0, i)
-    }
+    for (let i = 0; i < cnt; i++) tp.draw(TRAIL_LEN, 1, 0, i)
     tp.end()
 
-    // Pass 3: Planet circles (SDF, additive blend, sun bloom)
     const pp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
@@ -309,7 +343,15 @@ async function initSolarGPU(canvas, maxPlanets) {
     requestAnimationFrame(frame)
   }
   requestAnimationFrame(frame)
-  return () => { running = false; device.destroy() }
+
+  return {
+    destroy: () => { running = false; device.destroy() },
+    reset: () => {
+      w.init_solar()
+      initTrails()
+      elapsed = 0
+    },
+  }
 }
 
 export default function WebGPUDemo() {
@@ -318,9 +360,9 @@ export default function WebGPUDemo() {
   const [supported, setSupported] = useState(null)
   const [error, setError] = useState('')
   const [wasmReady, setWasmReady] = useState(false)
+  const [showSource, setShowSource] = useState(false)
   const cleanupRef = useRef()
 
-  // Dynamic canvas sizing — matches CSS display size × devicePixelRatio
   const sizeCanvas = useCallback(() => {
     const c = canvasRef.current
     if (!c) return
@@ -344,10 +386,8 @@ export default function WebGPUDemo() {
       initSolarGPU(canvas, 9)
         .then((c) => { cleanupRef.current = c; setError('') })
         .catch((e) => { console.error('WebGPU init fail:', e.message); setError(e.message); setSupported(false) })
-    } else {
-      console.warn('WebGPU not available, using Canvas2D fallback')
     }
-    return () => { if (cleanupRef.current) cleanupRef.current(); ro.disconnect() }
+    return () => { if (cleanupRef.current) cleanupRef.current.destroy(); ro.disconnect() }
   }, [sizeCanvas])
 
   useEffect(() => {
@@ -357,7 +397,6 @@ export default function WebGPUDemo() {
     let running = true
     const ctx = canvas.getContext('2d')
     let last = performance.now()
-
     const draw = async () => {
       if (!running) return
       const w = await loadWasm()
@@ -379,7 +418,7 @@ export default function WebGPUDemo() {
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       for (let i = 0; i < cnt; i++) {
-        const px = (data[i * 12] * canvas.width / 8 + canvas.width / 2)
+        const px = data[i * 12] * canvas.width / 8 + canvas.width / 2
         const py = (data[i * 12 + 1] * canvas.width / 8 * aspect + canvas.height / 2)
         const rad = Math.max(2, data[i * 12 + 5] * canvas.width / 8)
         ctx.beginPath()
@@ -425,13 +464,31 @@ export default function WebGPUDemo() {
             </div>
           )}
           <canvas ref={canvasRef} className="w-full rounded bg-black block object-center" style={{ aspectRatio: '512/320' }} />
-          <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Render: </span><span className="text-[#22d3ee]">WebGPU</span></div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Physics: </span><span className="text-[#34d399]">WASM (C++)</span></div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Bodies: </span><span className="text-[#f1f5f9]">9 (Sun + 8 planets)</span></div>
-            <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">OOP: </span><span className="text-[#f59e0b]">Vec2+PlanetGPUData+SolarSystem</span></div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button onClick={() => cleanupRef.current?.reset?.()}
+              className="px-3 py-1.5 bg-[#1e293b] text-[#94a3b8] text-[10px] font-mono rounded hover:bg-[#334155] hover:text-[#22d3ee] transition-all border border-[#334155]">
+              <span className="text-[#475569]">$</span> reset_solar
+            </button>
+            <button onClick={() => setShowSource(!showSource)}
+              className="px-3 py-1.5 bg-[#1e293b] text-[#94a3b8] text-[10px] font-mono rounded hover:bg-[#334155] hover:text-[#34d399] transition-all border border-[#334155]">
+              <span className="text-[#475569]">$</span> {showSource ? 'hide' : 'view'} source — wasm/solarsystem.cpp
+            </button>
+            <div className="ml-auto flex gap-2 text-[10px] font-mono">
+              <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Render: <span className="text-[#22d3ee]">WebGPU</span></span>
+              <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Physics: <span className="text-[#34d399]">WASM (C++)</span></span>
+              <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Bodies: <span className="text-[#f1f5f9]">9</span></span>
+            </div>
           </div>
         </motion.div>
+        {showSource && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 eng-card p-4 overflow-auto" style={{ maxHeight: 400 }}>
+            <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#1e293b]">
+              <span className="text-[10px] text-[#22d3ee] font-mono">wasm/solarsystem.cpp</span>
+              <span className="ml-auto text-[9px] text-[#475569] font-mono">clang --target=wasm32 -O3 -nostdlib -Wl,--no-entry -Wl,--export-all</span>
+            </div>
+            <pre className="text-[11px] font-mono text-[#94a3b8] whitespace-pre-wrap leading-relaxed">{CppSource}</pre>
+          </motion.div>
+        )}
       </div>
     </section>
   )
