@@ -86,7 +86,7 @@ struct BgOut { @builtin(position) pos: vec4f, @location(0) uv: vec2f }
 
 @vertex
 fn bgVert(@builtin(vertex_index) vi: u32) -> BgOut {
-  let pos = vec2f(f32(vi >> 1u) * 4.0 - 1.0, f32((vi & 1u) ^ 1u) * 4.0 - 1.0);
+  let pos = vec2f(f32(vi & 1u) * 4.0 - 1.0, f32(vi >> 1u) * 4.0 - 1.0);
   var out: BgOut;
   out.pos = vec4f(pos, 0.0, 1.0);
   out.uv = pos * 0.5 + 0.5;
@@ -294,13 +294,15 @@ async function initSolarGPU(canvas, maxPlanets) {
     bp.draw(3, 1, 0, 0)
     bp.end()
 
-    // Pass 2: Trails (line-strip, additive blend)
+    // Pass 2: Trails (one line-strip draw per planet)
     const tp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
     tp.setPipeline(trailPipe)
     tp.setBindGroup(0, trailBG)
-    tp.draw(TRAIL_LEN, cnt, 0, 0)
+    for (let i = 0; i < cnt; i++) {
+      tp.draw(TRAIL_LEN, 1, 0, i)
+    }
     tp.end()
 
     // Pass 3: Planets (triangle-strip quads, SDF circle, sun bloom)
