@@ -481,12 +481,12 @@ export default function WebGPUDemo() {
           </div>
         </motion.div>
         {showSource && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 eng-card p-4 overflow-auto" style={{ maxHeight: 400 }}>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 eng-card p-4">
             <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[#1e293b]">
               <span className="text-[10px] text-[#22d3ee] font-mono">wasm/solarsystem.cpp</span>
               <span className="ml-auto text-[9px] text-[#475569] font-mono">clang --target=wasm32 -O3 -nostdlib -Wl,--no-entry -Wl,--export-all</span>
             </div>
-            <pre className="text-[11px] font-mono text-[#94a3b8] whitespace-pre-wrap leading-relaxed">{CppSource}</pre>
+            <pre className="text-[11px] font-mono text-[#94a3b8] whitespace-pre leading-relaxed overflow-auto" style={{ maxHeight: 400 }}>{CppSource}</pre>
           </motion.div>
         )}
       </div>
