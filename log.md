@@ -31,7 +31,7 @@
 | `Projects.jsx` | Project cards staggered with motion.div |
 | `ShowcaseWall.jsx` | Tech showcase grid with flip cards + featured projects |
 | `WasmDemo.jsx` | C++→WASM benchmark suite (fib, factorial, prime, count_primes) |
-| `WebGPUDemo.jsx` | Solar system simulation: C++ OOP (WASM) physics + WebGPU instanced rendering via storage+uniform buffers, Canvas2D fallback |
+| `WebGPUDemo.jsx` | Solar system simulation: C++ OOP (WASM) physics + WebGPU 3-pass rendering (procedural starfield/nebula background, orbital trails as line-strip, instanced planet quads with SDF circles + sun bloom), Canvas2D fallback |
 | `WasmTerrain.jsx` | R3F component: heightmap from C++ WASM worker, deformable plane |
 | `Scene3D.jsx` | R3F scene: icosahedron, torus spiral, floating geos, rings, shader particles, WASM terrain |
 | `Terminal.jsx` | CLI terminal: 18 commands, up/down history, tab-completion, sound |
@@ -131,7 +131,12 @@
 - **Root Cause**: `draw(maxPlanets*4, 1)` with `triangle-strip` topology. After planet N's quad (vertices 0-3), the GPU formed triangle (v2, v3, v0) connecting planet N+1's first vertex, creating enormous diagonal strips between distant planets.
 - **Fix**: Switched to instanced rendering `draw(4, maxPlanets, 0, 0)`. Each planet is an independent instance with 4 vertices forming one quad via `triangle-strip`. WebGPU never creates primitives across instance boundaries. Vertex shader uses `@builtin(instance_index)` for planet lookup and `@builtin(vertex_index)` for quad corner selection.
 
-### 12. Splash Screen Boot Order
+### 13. Pac-Man Wedge — Incorrect Quad Vertex Order
+- **File**: `src/components/WebGPUDemo.jsx`
+- **Root Cause**: `select()`-based corner calculation produced vertices (-1,-1),(1,-1),(1,1),(-1,1). With `triangle-strip`, T1 covered right half, T2 covered top half, leaving the bottom-left quadrant unrendered (Pac-Man wedge).
+- **Fix**: Changed to explicit array `array<vec2f,4>(vec2f(-1,-1), vec2f(1,-1), vec2f(-1,1), vec2f(1,1))`. T1 covers triangle below diagonal, T2 covers above, full quad covered.
+
+### 14. Splash Screen Boot Order
 - **File**: `src/components/SplashScreen.jsx`
 - **Fix**: Boot line timings adjusted from 300ms to 200ms intervals for faster boot, last line appears at 2400ms, auto-dismiss at 6s.
 
@@ -158,10 +163,12 @@
 - 9-body N-body gravity simulation (G=1, M_sun=10, correct circular orbit velocities)
 - C++ classes: Vec2, Planet, SolarSystem
 - Compiled to WASM (6356 bytes), physics runs at ~60fps
-- Rendered via WebGPU instanced rendering: `draw(4, count)` with storage buffer for per-planet data, uniform buffer for scale+aspect, `@builtin(instance_index)` for planet lookup
+- **3-pass WebGPU rendering pipeline**:
+  - Pass 1 (Background): Full-screen triangle with procedural starfield (hash-based per-pixel stars with sine twinkle), 3-octave nebula gradient, and sun center glow
+  - Pass 2 (Trails): Instanced `line-strip` rendering of 40-point ring buffer per planet, age-based fade (0→1 oldest→newest), per-planet color tinting, additive blending
+  - Pass 3 (Planets): Instanced `triangle-strip` quads with SDF circle fragment shader, sun (instance 0) gets radial bloom `exp(-d²·3)·0.6`
+- Shared uniform buffer for scale=0.25, aspect=canvas.width/height, elapsed time
 - Canvas2D fallback when WebGPU unavailable
-- Sun has glow effect, planets have distinct colors and sizes
-- Scale uniform maps world [-4,4] → NDC [-1,1]; aspect uniform corrects for non-square canvas
 
 ### CLI Terminal
 - 18 commands: whoami, about, skills, projects, contact, ls, cat, echo, date, pwd, banner, neofetch, sudo, 42, mit, wasm, solar, clear, exit, help
