@@ -22,16 +22,16 @@ struct SimParams { scale: f32, aspect: f32, _pad: vec2<f32> }
 struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32> }
 
 @vertex
-fn vertMain(@builtin(vertex_index) vi: u32) -> VOut {
-  let id = vi / 4u;
-  let vert = vi % 4u;
-  let p = planets[id];
-  let worldPos = p.pos * sim.scale;
+fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
+  let p = planets[ii];
+  let corner = vec2<f32>(
+    select(-1.0, 1.0, vi == 1u || vi == 2u),
+    select(-1.0, 1.0, vi == 2u || vi == 3u),
+  );
+  let world = p.pos * sim.scale;
   let rad = p.radius * sim.scale;
-  let ox = select(rad, -rad, vert == 0u || vert == 3u);
-  let oy = select(rad, -rad, vert == 0u || vert == 1u);
   var out: VOut;
-  out.pos = vec4(worldPos.x + ox, worldPos.y + oy * sim.aspect, 0.0, 1.0);
+  out.pos = vec4(world.x + corner.x * rad, world.y + corner.y * rad * sim.aspect, 0.0, 1.0);
   out.col = p.color;
   return out;
 }
@@ -88,10 +88,8 @@ async function initSolarGPU(canvas, maxPlanets) {
 
   const stageData = new Float32Array(maxPlanets * floatsPerPlanet)
   const uniformData = new Float32Array(4)
-  const scale = 1.0 / 4.0
-  const aspect = canvas.width / canvas.height
-  uniformData[0] = scale
-  uniformData[1] = aspect
+  uniformData[0] = 1.0 / 4.0
+  uniformData[1] = canvas.width / canvas.height
   device.queue.writeBuffer(uniformBuf, 0, uniformData)
 
   let running = true
@@ -110,12 +108,12 @@ async function initSolarGPU(canvas, maxPlanets) {
     const cnt = w.planet_count()
     stageData.fill(0)
     for (let i = 0; i < cnt && i < maxPlanets; i++) {
-      stageData[i * floatsPerPlanet] = w.planet_x(i)
-      stageData[i * floatsPerPlanet + 1] = w.planet_y(i)
-      stageData[i * floatsPerPlanet + 2] = w.planet_radius(i)
-      stageData[i * floatsPerPlanet + 4] = w.planet_r(i)
-      stageData[i * floatsPerPlanet + 5] = w.planet_g(i)
-      stageData[i * floatsPerPlanet + 6] = w.planet_b(i)
+      stageData[i * 8] = w.planet_x(i)
+      stageData[i * 8 + 1] = w.planet_y(i)
+      stageData[i * 8 + 2] = w.planet_radius(i)
+      stageData[i * 8 + 4] = w.planet_r(i)
+      stageData[i * 8 + 5] = w.planet_g(i)
+      stageData[i * 8 + 6] = w.planet_b(i)
     }
     device.queue.writeBuffer(buf, 0, stageData)
 
@@ -126,7 +124,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     })
     rp.setPipeline(pipe)
     rp.setBindGroup(0, bg)
-    rp.draw(maxPlanets * 4, 1, 0, 0)
+    rp.draw(4, maxPlanets, 0, 0)
     rp.end()
     device.queue.submit([enc.finish()])
     requestAnimationFrame(frame)
