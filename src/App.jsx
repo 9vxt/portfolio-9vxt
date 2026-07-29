@@ -19,6 +19,12 @@ import ShowcaseWall from './components/ShowcaseWall'
 import SplashScreen from './components/SplashScreen'
 import ShutdownScreen from './components/ShutdownScreen'
 import GlobalGlitch from './components/GlobalGlitch'
+import ClickParticles from './components/ClickParticles'
+import ScrollToTop from './components/ScrollToTop'
+import Toast from './components/Toast'
+import DynamicTitle from './components/DynamicTitle'
+import ConsoleArt from './components/ConsoleArt'
+import SectionReveal from './components/SectionReveal'
 import SoundToggle from './components/SoundEngine'
 import { onShutdown } from './lib/shutdown'
 
@@ -74,6 +80,12 @@ export default function App() {
         <CursorGlow />
         <SoundToggle />
         <GlobalGlitch />
+        <ClickParticles />
+        <ScrollToTop />
+        <Toast />
+        <DynamicTitle />
+        <ConsoleArt />
+        <SectionReveal />
       </div>
     </ErrorBoundary>
   )

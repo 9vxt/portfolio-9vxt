@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PingIndicator from './PingIndicator'
 
 const links = [
   { label: '_about', href: '#about', section: 'about' },
@@ -21,6 +22,24 @@ function Clock() {
     <span className="text-[10px] font-mono text-[#475569] tabular-nums">
       {time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}{' '}
       {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+    </span>
+  )
+}
+
+const statusMessages = ['ALL SYSTEMS NOMINAL', 'KERNEL: RUNNING', 'WASM: LOADED', 'GPU: ONLINE', 'NEURAL: IDLE', 'UPTIME: ∞']
+function StatusTicker() {
+  const [idx, setIdx] = useState(0)
+  const [fade, setFade] = useState(true)
+  useEffect(() => {
+    const id = setInterval(() => {
+      setFade(false)
+      setTimeout(() => { setIdx(p => (p + 1) % statusMessages.length); setFade(true) }, 300)
+    }, 2500)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <span className={`text-[9px] font-mono text-[#34d399] tracking-wider transition-opacity duration-300 ${fade ? 'opacity-100' : 'opacity-0'}`}>
+      ◆ {statusMessages[idx]}
     </span>
   )
 }
@@ -84,6 +103,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-2"><PingIndicator /></div>
+            <div className="hidden lg:block"><StatusTicker /></div>
             <div className="hidden sm:block"><Clock /></div>
             <a href="https://github.com/9vxt" target="_blank" rel="noopener noreferrer"
               className="text-[#64748b] hover:text-[#f1f5f9] transition-colors">

@@ -51,17 +51,87 @@ function GlitchText({ children }) {
   return (
     <span className={`relative inline-block transition-none ${glitching ? 'glitch-active' : ''}`}>
       {children}
-      {glitching && (
-        <span className="absolute inset-0 pointer-events-none" aria-hidden>
-          <span className="absolute inset-0 text-[#ff0040] opacity-60" style={{ clipPath: 'inset(20% 0 60% 0)', transform: 'translate(-2px, 0)' }}>{children}</span>
-          <span className="absolute inset-0 text-[#00f0ff] opacity-60" style={{ clipPath: 'inset(60% 0 10% 0)', transform: 'translate(2px, 0)' }}>{children}</span>
-        </span>
-      )}
+    </span>
+  )
+}
+
+const heroNames = [
+  'Athibordee\nThongboonma',
+  'Gust',
+  '9vxt',
+  'Athibordee "Gust"',
+  '>_ Athibordee',
+  'กัส',
+]
+
+function AnimatedName() {
+  const [nameIdx, setNameIdx] = useState(0)
+  const [typing, setTyping] = useState(true)
+  const [display, setDisplay] = useState('')
+  const [cursor, setCursor] = useState(true)
+  const fullName = heroNames[nameIdx]
+
+  useEffect(() => {
+    const cursorId = setInterval(() => setCursor(p => !p), 530)
+    return () => clearInterval(cursorId)
+  }, [])
+
+  useEffect(() => {
+    setTyping(true)
+    let i = 0
+    const id = setInterval(() => {
+      i++
+      setDisplay(fullName.slice(0, i))
+      if (i >= fullName.length) {
+        clearInterval(id)
+        setTyping(false)
+      }
+    }, 60)
+    const switchId = setTimeout(() => {
+      setNameIdx((prev) => (prev + 1) % heroNames.length)
+    }, 3500)
+    return () => { clearInterval(id); clearTimeout(switchId) }
+  }, [nameIdx, fullName])
+
+  const parts = display.split('\n')
+  return (
+    <span>
+      {parts[0]}
+      {parts[1] && <><br /><span className="text-[#3b82f6]">{parts[1]}</span></>}
+      <span className={`text-[#22d3ee] font-light ${cursor ? 'opacity-100' : 'opacity-0'}`}>_</span>
     </span>
   )
 }
 
 export default function Hero() {
+  const subtitles = [
+    'Embedded Systems Developer',
+    'OS Framework Architect',
+    'Computer Engineering Student',
+    'Low-Level Programmer',
+    'MIT Aspirant',
+  ]
+  const [subIdx, setSubIdx] = useState(0)
+  const [subText, setSubText] = useState('')
+  const [subCursor, setSubCursor] = useState(true)
+
+  useEffect(() => {
+    const cursorId = setInterval(() => setSubCursor(p => !p), 530)
+    return () => clearInterval(cursorId)
+  }, [])
+
+  useEffect(() => {
+    let i = 0; let dir = 1
+    const id = setInterval(() => {
+      if (dir === 1) {
+        i++
+        setSubText(subtitles[subIdx].slice(0, i))
+        if (i >= subtitles[subIdx].length) { clearInterval(id); setTimeout(() => { dir = -1; const id2 = setInterval(() => { i--; setSubText(subtitles[subIdx].slice(0, i)); if (i <= 0) { clearInterval(id2); setSubIdx(p => (p + 1) % subtitles.length) } }, 30); return }, 2000) }
+      }
+    }, 50)
+    return () => clearInterval(id)
+  }, [subIdx, subtitles])
+
   return (
     <section id="hero" className="relative min-h-screen w-full overflow-hidden pt-14">
       <div className="absolute inset-0 bg-gradient-to-b from-[#3b82f6]/5 via-transparent to-[#080c14]/90 pointer-events-none z-[1]" />
@@ -79,13 +149,20 @@ export default function Hero() {
             <span className="text-[11px] text-[#94a3b8] font-mono">open for opportunities</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-[#f1f5f9] mb-2 tracking-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-[#f1f5f9] mb-2 tracking-tight min-h-[5rem] sm:min-h-[6rem]">
             <GlitchText>
-              Athibordee
-              <br />
-              <span className="text-[#3b82f6]">Thongboonma</span>
+              <AnimatedName />
             </GlitchText>
           </h1>
+
+          <div className="h-6 mb-2">
+            <span className="text-sm font-mono text-[#64748b]">
+              <span className="text-[#22d3ee]">$</span> ./status --title
+              <span className="text-[#475569]"> {'>'} </span>
+              <span className="text-[#f1f5f9]">{subText}</span>
+              <span className={`text-[#22d3ee] ${subCursor ? 'opacity-100' : 'opacity-0'}`}>▊</span>
+            </span>
+          </div>
 
           <p className="text-xs sm:text-sm text-[#94a3b8] font-mono max-w-xl mx-auto leading-relaxed">
             <span className="text-[#475569]">#include</span>{' '}
