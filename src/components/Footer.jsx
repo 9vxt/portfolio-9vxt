@@ -17,11 +17,11 @@ export default function Footer() {
             <span className="text-[#1e293b]">// </span>crafted with{' '}
                <span className="text-[#3b82f6]">React</span>
                <span className="text-[#1e293b]"> + </span>
-               <span className="text-[#22d3ee]">ESP32</span>
+               <span className="text-[#22d3ee]">Three.js</span>
                <span className="text-[#1e293b]"> + </span>
-               <span className="text-[#34d399]">C++</span>
+               <span className="text-[#34d399]">TailwindCSS</span>
                <span className="text-[#1e293b]"> + </span>
-               <span className="text-[#f59e0b]">TailwindCSS</span>
+               <span className="text-[#f59e0b]">Framer Motion</span>
             </p>
           </div>
         </div>

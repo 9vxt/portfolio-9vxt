@@ -4,13 +4,14 @@ import { useCallback, useState } from 'react'
 let ctx = null
 let masterGain = null
 let droneNodes = []
+let melodyInterval = null
 let _enabled = false
 
 function getCtx() {
   if (!ctx) {
     ctx = new (window.AudioContext || window.webkitAudioContext)()
     masterGain = ctx.createGain()
-    masterGain.gain.value = 0.12
+    masterGain.gain.value = 0.15
     masterGain.connect(ctx.destination)
   }
   if (ctx.state === 'suspended') ctx.resume()
@@ -26,14 +27,14 @@ function startDrone() {
     osc.type = 'sine'
     osc.frequency.value = f
     const gain = c.createGain()
-    gain.gain.value = 0.03 + (i === 0 ? 0.05 : 0)
+    gain.gain.value = 0.02 + (i === 0 ? 0.04 : 0)
     osc.connect(gain); gain.connect(g); osc.start()
     return { osc, gain }
   })
   const lfo = c.createOscillator()
-  lfo.frequency.value = 0.08
+  lfo.frequency.value = 0.06
   const lfoG = c.createGain()
-  lfoG.gain.value = 3
+  lfoG.gain.value = 2
   lfo.connect(lfoG); lfoG.connect(droneNodes[0].gain.gain); lfo.start()
   droneNodes.push({ osc: lfo, gain: lfoG })
 }
@@ -43,14 +44,38 @@ function stopDrone() {
   droneNodes = []
 }
 
+function startMelody() {
+  stopMelody()
+  const notes = [262, 330, 392, 523, 659, 784, 1047, 784, 659, 523, 392, 330]
+  let i = 0
+  melodyInterval = setInterval(() => {
+    if (!_enabled) return
+    try {
+      const c = getCtx()
+      const osc = c.createOscillator(); const g = c.createGain()
+      osc.type = 'triangle'
+      osc.frequency.value = notes[i % notes.length]
+      g.gain.setValueAtTime(0, c.currentTime)
+      g.gain.linearRampToValueAtTime(0.015, c.currentTime + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35)
+      osc.connect(g); g.connect(masterGain); osc.start(); osc.stop(c.currentTime + 0.35)
+      i++
+    } catch {}
+  }, 400)
+}
+
+function stopMelody() {
+  if (melodyInterval) { clearInterval(melodyInterval); melodyInterval = null }
+}
+
 export function enableSound() {
   if (_enabled) return
   _enabled = true
-  getCtx(); startDrone()
+  getCtx(); startDrone(); startMelody()
 }
 
 export function disableSound() {
-  _enabled = false; stopDrone()
+  _enabled = false; stopDrone(); stopMelody()
 }
 
 export function toggleSound() {
@@ -108,10 +133,8 @@ export function playClick() {
   playBlip(1200, 0.04, 0.015)
 }
 
-// Global click handler
 if (typeof window !== 'undefined') {
   window.addEventListener('click', () => { if (_enabled) playClick() }, { passive: true })
-  // Auto-enable after 5 seconds if not already enabled via splash
   setTimeout(() => { if (!_enabled) enableSound() }, 5000)
 }
 
@@ -137,7 +160,7 @@ export default function SoundToggle() {
           </>
         )}
       </svg>
-      <span>{on ? 'sound on' : 'off'}</span>
+      <span>{on ? '♫ melody on' : 'off'}</span>
     </button>
   )
 }

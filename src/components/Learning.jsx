@@ -13,11 +13,11 @@ const courses = [
   { code: 'CPU', name: 'CPU Design & Computer Architecture', type: 'self', status: 'exploring', progress: 20, color: '#64748b' },
 ]
 
-const roadmap = [
-  { period: 'NOW', items: ['POSN Computer — competitive programming training', 'CS50x — complete problem sets + final project', 'MIT 6.006 — start algorithms & data structures', 'ESP32-S3 Guitar multi-effect — R&D phase'] },
-  { period: 'Q2 2026', items: ['SAT 1600 — consistent practice & mock exams', 'TOEFL 110+ — English proficiency prep', 'Compiler design — build a toy compiler in Rust', 'Rucyd OS — memory safety framework v1 release'] },
-  { period: 'Q3 2026', items: ['MIT application prep — essays & portfolio', 'CPU design — Verilog/VHDL CPU simulation', 'Deepen ASM & reverse engineering skills', 'Publish technical blog on embedded systems'] },
-  { period: 'Q4 2026', items: ['College applications — MIT EA 🔥', 'Complete Rucyd OS documentation & talks', 'Compiler & OS projects — public releases', 'Prepare for Computer Engineering at MIT'] },
+const goals = [
+  { title: 'POSN Computer', desc: 'Competitive programming — mastering algorithms, data structures, and problem-solving for Thailand POSN Computer Olympiad', icon: '⚡', color: '#ef4444' },
+  { title: 'SAT 1600', desc: 'Perfect score target — consistent mock exams, math mastery, evidence-based reading & writing', icon: '📐', color: '#f59e0b' },
+  { title: 'TOEFL 110+', desc: 'English proficiency — reading, listening, speaking, writing for international university admission', icon: '🌐', color: '#3b82f6' },
+  { title: 'MIT Computer Engineering', desc: 'Ultimate goal — studying Computer Engineering at MIT, designing chips, building kernels, pushing computing forward', icon: '🎯', color: '#8b5cf6' },
 ]
 
 function ProgressBar({ course, index, visible }) {
@@ -118,42 +118,33 @@ export default function Learning() {
                 <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
                 <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
               </div>
-              <span className="text-xs text-[#475569] font-mono ml-2">goals — mit_2026</span>
+              <span className="text-xs text-[#475569] font-mono ml-2">goals — target_board</span>
             </div>
 
             <p className="text-xs text-[#64748b] font-mono mb-4">
-              <span className="text-[#34d399]">$</span> cat goals.json
+              <span className="text-[#34d399]">$</span> cat goals.json —format=cards
             </p>
 
-            <div className="relative">
-              <div className="absolute left-[7px] top-0 bottom-0 w-0.5 bg-[#1e293b]" />
-              <div className="space-y-5">
-                {roadmap.map((q, i) => (
-                  <motion.div
-                    key={q.period}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={visible ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
-                    transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-                    className="relative pl-6"
-                  >
-                    <div className="absolute left-0 top-1 w-[15px] h-[15px] rounded-full border-2 border-[#f59e0b] bg-[#080c14] flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
-                    </div>
-                    <p className="text-xs font-mono text-[#f59e0b] mb-1.5">{q.period}</p>
-                    <div className="space-y-0.5">
-                      {q.items.map((item) => (
-                        <p key={item} className="text-[11px] font-mono text-[#64748b]">
-                          <span className="text-[#475569]">→</span> {item}
-                        </p>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+            <div className="space-y-3">
+              {goals.map((g, i) => (
+                <motion.div
+                  key={g.title}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={visible ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
+                  transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
+                  className="p-3 border border-[#1e293b] rounded-md hover:border-[#f59e0b]/40 transition-all group"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">{g.icon}</span>
+                    <p className="text-xs font-mono text-[#f1f5f9] group-hover:text-[#f59e0b] transition-colors">{g.title}</p>
+                  </div>
+                  <p className="text-[10px] font-mono text-[#64748b] leading-relaxed pl-6">{g.desc}</p>
+                </motion.div>
+              ))}
             </div>
 
-            <p className="text-xs text-[#64748b] mt-4 pt-3 border-t border-[#1e293b] font-mono">
-              <span className="text-[#f59e0b]">★</span> POSN Computer · SAT 1600 · TOEFL 110+ · MIT
+            <p className="text-xs text-[#64748b] mt-4 pt-3 border-t border-[#1e293b] font-mono text-center">
+              <span className="text-[#f59e0b]">◆</span> 4 targets · estimated completion: <span className="text-[#34d399]">2026–2027</span>
             </p>
           </motion.div>
         </div>

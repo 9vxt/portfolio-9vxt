@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Terminal from './Terminal'
 
@@ -39,6 +39,28 @@ function MatrixRain() {
   return <canvas ref={canvasRef} className="absolute inset-0 opacity-10 pointer-events-none" />
 }
 
+function GlitchText({ children }) {
+  const [glitching, setGlitching] = useState(false)
+  useEffect(() => {
+    const id = setInterval(() => {
+      setGlitching(true)
+      setTimeout(() => setGlitching(false), 200)
+    }, 3000 + Math.random() * 2000)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <span className={`relative inline-block transition-none ${glitching ? 'glitch-active' : ''}`}>
+      {children}
+      {glitching && (
+        <span className="absolute inset-0 pointer-events-none" aria-hidden>
+          <span className="absolute inset-0 text-[#ff0040] opacity-60" style={{ clipPath: 'inset(20% 0 60% 0)', transform: 'translate(-2px, 0)' }}>{children}</span>
+          <span className="absolute inset-0 text-[#00f0ff] opacity-60" style={{ clipPath: 'inset(60% 0 10% 0)', transform: 'translate(2px, 0)' }}>{children}</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
 export default function Hero() {
   return (
     <section id="hero" className="relative min-h-screen w-full overflow-hidden pt-14">
@@ -58,9 +80,11 @@ export default function Hero() {
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-[#f1f5f9] mb-2 tracking-tight">
-            Athibordee
-            <br />
-            <span className="text-[#3b82f6]">Thongboonma</span>
+            <GlitchText>
+              Athibordee
+              <br />
+              <span className="text-[#3b82f6]">Thongboonma</span>
+            </GlitchText>
           </h1>
 
           <p className="text-xs sm:text-sm text-[#94a3b8] font-mono max-w-xl mx-auto leading-relaxed">
@@ -69,13 +93,15 @@ export default function Hero() {
             <span className="text-[#64748b]">|</span>{' '}
             <span className="text-[#34d399]">C++</span>
             <span className="text-[#475569]"> · </span>
-            <span className="text-[#34d399]">Rust</span>
+            <span className="text-[#34d399]">C</span>
             <span className="text-[#475569]"> · </span>
             <span className="text-[#34d399]">Python</span>
             <span className="text-[#475569]"> · </span>
-            <span className="text-[#3b82f6]">WASM</span>
+            <span className="text-[#3b82f6]">Rust</span>
             <span className="text-[#475569]"> · </span>
-            <span className="text-[#22d3ee]">WebGPU</span>
+            <span className="text-[#22d3ee]">C#</span>
+            <span className="text-[#475569]"> · </span>
+            <span className="text-[#f59e0b]">TypeScript</span>
           </p>
 
           <div className="flex justify-center gap-3 mt-4 flex-wrap">
