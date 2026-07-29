@@ -2,6 +2,8 @@ import { useRef, useEffect, useState } from 'react'
 import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
 
+const TRAIL_LEN = 40
+
 let wasm = null
 async function loadWasm() {
   if (wasm) return wasm
@@ -12,9 +14,9 @@ async function loadWasm() {
   return wasm
 }
 
-const wgsl = `
+const planetWGSL = `
 struct PlanetData { pos: vec2<f32>, radius: f32, _pad: f32, color: vec3<f32>, _pad2: f32 }
-struct SimParams { scale: f32, aspect: f32, _pad: vec2<f32> }
+struct SimParams { scale: f32, aspect: f32, time: f32, _pad: f32 }
 
 @group(0) @binding(0) var<storage, read> planets: array<PlanetData>;
 @group(0) @binding(1) var<uniform> sim: SimParams;
@@ -23,13 +25,8 @@ struct VOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec3<f32>, @l
 
 @vertex
 fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
+  let corners = array<vec2f, 4>(vec2f(-1,-1), vec2f(1,-1), vec2f(-1,1), vec2f(1,1));
   let p = planets[ii];
-  let corners = array<vec2f, 4>(
-    vec2f(-1.0, -1.0),
-    vec2f( 1.0, -1.0),
-    vec2f(-1.0,  1.0),
-    vec2f( 1.0,  1.0),
-  );
   let corner = corners[vi];
   let world = p.pos * sim.scale;
   let rad = p.radius * sim.scale;
@@ -41,11 +38,71 @@ fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) ->
 }
 
 @fragment
-fn fragMain(@location(0) col: vec3<f32>, @location(1) uv: vec2f) -> @location(0) vec4<f32> {
+fn fragMain(@location(0) col: vec3<f32>, @location(1) uv: vec2f, @builtin(instance_index) ii: u32) -> @location(0) vec4<f32> {
   let d = length(uv);
-  if (d > 1.0) { discard; }
   let a = 1.0 - smoothstep(0.85, 1.0, d);
+  if (d > 1.0) { discard; }
+  if (ii == 0u) {
+    let glow = exp(-d * d * 3.0) * 0.6;
+    return vec4(col * (1.0 + glow), a * 0.8 + glow * 0.5);
+  }
   return vec4(col, a * 0.8);
+}
+`
+
+const trailWGSL = `
+struct SimParams { scale: f32, aspect: f32, time: f32, _pad: f32 }
+struct TrailPoint { pos: vec2<f32>, age: f32, _pad: f32, col: vec3<f32>, _pad2: f32 }
+
+@group(0) @binding(0) var<storage, read> trail: array<TrailPoint>;
+@group(0) @binding(1) var<uniform> sim: SimParams;
+
+struct TOut { @builtin(position) pos: vec4<f32>, @location(0) col: vec4<f32> }
+
+const TRAIL_LEN = ${TRAIL_LEN}u;
+
+@vertex
+fn trailVert(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> TOut {
+  let tp = trail[ii * TRAIL_LEN + vi];
+  let world = tp.pos * sim.scale;
+  var out: TOut;
+  out.pos = vec4(world.x, world.y * sim.aspect, 0.0, 1.0);
+  out.col = vec4(tp.col * tp.age, tp.age * 0.5);
+  return out;
+}
+
+@fragment
+fn trailFrag(@location(0) col: vec4<f32>) -> @location(0) vec4<f32> {
+  return col;
+}
+`
+
+const bgWGSL = `
+@group(0) @binding(0) var<uniform> time: f32;
+
+struct BgOut { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2f }
+
+@vertex
+fn bgVert(@builtin(vertex_index) vi: u32) -> BgOut {
+  let pos = vec2f(f32(vi >> 1u) * 4.0 - 1.0, f32((vi & 1u) ^ 1u) * 4.0 - 1.0);
+  var out: BgOut;
+  out.pos = vec4(pos, 0.0, 1.0);
+  out.uv = pos * 0.5 + 0.5;
+  return out;
+}
+
+@fragment
+fn bgFrag(@location(0) uv: vec2f) -> @location(0) vec4<f32> {
+  let p = vec2u(uv * vec2f(512.0, 320.0));
+  let h = (p.x * 1973u + p.y * 9277u) ^ 12345u;
+  let star = f32(h % 10000u) / 10000.0;
+  let twinkle = sin(f32(h) * 0.7 + time * 1.5) * 0.5 + 0.5;
+  let starBright = smoothstep(0.997, 1.0, star) * (0.15 + 0.85 * twinkle);
+  let nebula = sin(uv.x * 3.0 + time * 0.05) * 0.012 + cos(uv.y * 4.0 + time * 0.03) * 0.012 + sin((uv.x + uv.y) * 5.0 + time * 0.04) * 0.008;
+  let center = length(uv - 0.5);
+  let sunGlow = exp(-center * center * 8.0) * 0.04;
+  let col = vec3f(0.004 + nebula + sunGlow) + vec3f(starBright);
+  return vec4(col, 1.0);
 }
 `
 
@@ -57,50 +114,101 @@ async function initSolarGPU(canvas, maxPlanets) {
   const ctx = canvas.getContext('webgpu')
   ctx.configure({ device, format: 'bgra8unorm', alphaMode: 'premultiplied' })
 
-  const floatsPerPlanet = 8
-  const buf = device.createBuffer({
-    size: maxPlanets * floatsPerPlanet * 4,
+  const scale = 1.0 / 4.0
+  const aspect = canvas.width / canvas.height
+
+  // --- Buffers ---
+  const planetBuf = device.createBuffer({
+    size: maxPlanets * 8 * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   })
-
-  const uniformBuf = device.createBuffer({
+  const simBuf = device.createBuffer({
     size: 16,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
+  const bgTimeBuf = device.createBuffer({
+    size: 4,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  })
+  const trailBuf = device.createBuffer({
+    size: maxPlanets * TRAIL_LEN * 8 * 4,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  })
 
-  const mod = device.createShaderModule({ code: wgsl })
+  // --- Shader modules ---
+  const planetMod = device.createShaderModule({ code: planetWGSL })
+  const trailMod = device.createShaderModule({ code: trailWGSL })
+  const bgMod = device.createShaderModule({ code: bgWGSL })
 
-  const layout = device.createBindGroupLayout({
+  // --- Background pipeline ---
+  const bgLayout = device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+    ]
+  })
+  const bgPipe = device.createRenderPipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [bgLayout] }),
+    vertex: { module: bgMod, entryPoint: 'bgVert' },
+    fragment: { module: bgMod, entryPoint: 'bgFrag', targets: [{ format: 'bgra8unorm' }] },
+    primitive: { topology: 'triangle-list' },
+  })
+  const bgBG = device.createBindGroup({
+    layout: bgLayout,
+    entries: [{ binding: 0, resource: { buffer: bgTimeBuf } }],
+  })
+
+  // --- Trail pipeline ---
+  const trailLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
       { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } },
     ]
   })
-  const pipe = device.createRenderPipeline({
-    layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
-    vertex: { module: mod, entryPoint: 'vertMain' },
-    fragment: {
-      module: mod, entryPoint: 'fragMain',
-      targets: [{ format: 'bgra8unorm', blend: { color: { srcFactor: 'src-alpha', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } } }],
-    },
-    primitive: { topology: 'triangle-strip' },
+  const trailPipe = device.createRenderPipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [trailLayout] }),
+    vertex: { module: trailMod, entryPoint: 'trailVert' },
+    fragment: { module: trailMod, entryPoint: 'trailFrag', targets: [{ format: 'bgra8unorm', blend: { color: { srcFactor: 'src-alpha', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } } }] },
+    primitive: { topology: 'line-strip' },
   })
-  const bg = device.createBindGroup({
-    layout,
+  const trailBG = device.createBindGroup({
+    layout: trailLayout,
     entries: [
-      { binding: 0, resource: { buffer: buf } },
-      { binding: 1, resource: { buffer: uniformBuf } },
+      { binding: 0, resource: { buffer: trailBuf } },
+      { binding: 1, resource: { buffer: simBuf } },
     ],
   })
 
-  const stageData = new Float32Array(maxPlanets * floatsPerPlanet)
-  const uniformData = new Float32Array(4)
-  uniformData[0] = 1.0 / 4.0
-  uniformData[1] = canvas.width / canvas.height
-  device.queue.writeBuffer(uniformBuf, 0, uniformData)
+  // --- Planet pipeline ---
+  const planetLayout = device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
+      { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+    ]
+  })
+  const planetPipe = device.createRenderPipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [planetLayout] }),
+    vertex: { module: planetMod, entryPoint: 'vertMain' },
+    fragment: { module: planetMod, entryPoint: 'fragMain', targets: [{ format: 'bgra8unorm', blend: { color: { srcFactor: 'src-alpha', dstFactor: 'one', operation: 'add' }, alpha: { srcFactor: 'one', dstFactor: 'one', operation: 'add' } } }] },
+    primitive: { topology: 'triangle-strip' },
+  })
+  const planetBG = device.createBindGroup({
+    layout: planetLayout,
+    entries: [
+      { binding: 0, resource: { buffer: planetBuf } },
+      { binding: 1, resource: { buffer: simBuf } },
+    ],
+  })
+
+  // --- Staging data ---
+  const planetStage = new Float32Array(maxPlanets * 8)
+  const simStage = new Float32Array(4)
+  const trailStage = new Float32Array(maxPlanets * TRAIL_LEN * 8)
+  const trailXY = new Float32Array(maxPlanets * TRAIL_LEN * 2)
+  const trailHEAD = new Uint32Array(maxPlanets)
+  const trailCNT = new Uint32Array(maxPlanets)
 
   let running = true
-
+  let elapsed = 0
   const w = await loadWasm()
   let last = performance.now()
 
@@ -109,30 +217,96 @@ async function initSolarGPU(canvas, maxPlanets) {
     const now = performance.now()
     const dt = Math.min((now - last) * 0.001, 0.02)
     last = now
+    elapsed += dt
 
     w.step_solar(dt)
-
     const cnt = w.planet_count()
-    stageData.fill(0)
-    for (let i = 0; i < cnt && i < maxPlanets; i++) {
-      stageData[i * 8] = w.planet_x(i)
-      stageData[i * 8 + 1] = w.planet_y(i)
-      stageData[i * 8 + 2] = w.planet_radius(i)
-      stageData[i * 8 + 4] = w.planet_r(i)
-      stageData[i * 8 + 5] = w.planet_g(i)
-      stageData[i * 8 + 6] = w.planet_b(i)
-    }
-    device.queue.writeBuffer(buf, 0, stageData)
 
+    // --- Write planet data ---
+    planetStage.fill(0)
+    for (let i = 0; i < cnt && i < maxPlanets; i++) {
+      planetStage[i * 8] = w.planet_x(i)
+      planetStage[i * 8 + 1] = w.planet_y(i)
+      planetStage[i * 8 + 2] = w.planet_radius(i)
+      planetStage[i * 8 + 4] = w.planet_r(i)
+      planetStage[i * 8 + 5] = w.planet_g(i)
+      planetStage[i * 8 + 6] = w.planet_b(i)
+    }
+    device.queue.writeBuffer(planetBuf, 0, planetStage)
+
+    // --- Update trail ring buffers ---
+    for (let i = 0; i < cnt && i < maxPlanets; i++) {
+      const base = i * TRAIL_LEN * 2
+      const head = trailHEAD[i]
+      trailXY[base + head * 2] = w.planet_x(i)
+      trailXY[base + head * 2 + 1] = w.planet_y(i)
+      trailHEAD[i] = (head + 1) % TRAIL_LEN
+      trailCNT[i] = Math.min(trailCNT[i] + 1, TRAIL_LEN)
+    }
+
+    // --- Linearize trail data (oldest to newest) for GPU ---
+    trailStage.fill(0)
+    for (let i = 0; i < cnt && i < maxPlanets; i++) {
+      const hd = trailHEAD[i]
+      const cc = trailCNT[i]
+      for (let j = 0; j < TRAIL_LEN; j++) {
+        let srcIdx, age
+        if (j < cc) {
+          srcIdx = (hd + 1 + j) % TRAIL_LEN
+          age = cc > 1 ? j / (cc - 1) : 1.0
+        } else {
+          srcIdx = hd
+          age = 0
+        }
+        const dst = (i * TRAIL_LEN + j) * 8
+        trailStage[dst] = trailXY[i * TRAIL_LEN * 2 + srcIdx * 2]
+        trailStage[dst + 1] = trailXY[i * TRAIL_LEN * 2 + srcIdx * 2 + 1]
+        trailStage[dst + 2] = age
+        trailStage[dst + 4] = w.planet_r(i)
+        trailStage[dst + 5] = w.planet_g(i)
+        trailStage[dst + 6] = w.planet_b(i)
+      }
+    }
+    device.queue.writeBuffer(trailBuf, 0, trailStage)
+
+    // --- Write uniforms ---
+    simStage[0] = scale
+    simStage[1] = aspect
+    simStage[2] = elapsed
+    device.queue.writeBuffer(simBuf, 0, simStage)
+    device.queue.writeBuffer(bgTimeBuf, 0, new Float32Array([elapsed]))
+
+    // --- Render passes ---
     const enc = device.createCommandEncoder()
     const tex = ctx.getCurrentTexture()
-    const rp = enc.beginRenderPass({
-      colorAttachments: [{ view: tex.createView(), loadOp: 'clear', clearValue: { r: 0, g: 0, b: 0, a: 0 }, storeOp: 'store' }],
+
+    // Pass 1: Background
+    const bp = enc.beginRenderPass({
+      colorAttachments: [{ view: tex.createView(), loadOp: 'clear', clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }],
     })
-    rp.setPipeline(pipe)
-    rp.setBindGroup(0, bg)
-    rp.draw(4, maxPlanets, 0, 0)
-    rp.end()
+    bp.setPipeline(bgPipe)
+    bp.setBindGroup(0, bgBG)
+    bp.draw(3, 1, 0, 0)
+    bp.end()
+
+    // Pass 2: Trails
+    const tp = enc.beginRenderPass({
+      colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
+    })
+    tp.setPipeline(trailPipe)
+    tp.setBindGroup(0, trailBG)
+    tp.draw(TRAIL_LEN, maxPlanets, 0, 0)
+    tp.end()
+
+    // Pass 3: Planets
+    const pp = enc.beginRenderPass({
+      colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
+    })
+    pp.setPipeline(planetPipe)
+    pp.setBindGroup(0, planetBG)
+    pp.draw(4, maxPlanets, 0, 0)
+    pp.end()
+
     device.queue.submit([enc.finish()])
     requestAnimationFrame(frame)
   }
@@ -177,7 +351,22 @@ export default function WebGPUDemo() {
       w.step_solar(Math.min((now - last) * 0.001, 0.02))
       last = now
       ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Background
+      ctx.fillStyle = '#080c14'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
       const cnt = w.planet_count()
+      // Sun glow
+      const sx = w.planet_x(0) * canvas.width / 8 + canvas.width / 2
+      const sy = w.planet_y(0) * canvas.height / 8 + canvas.height / 2
+      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 60)
+      grad.addColorStop(0, 'rgba(255,200,50,0.12)')
+      grad.addColorStop(1, 'rgba(255,200,50,0)')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      // Planets
       for (let i = 0; i < cnt; i++) {
         const px = w.planet_x(i) * canvas.width / 8 + canvas.width / 2
         const py = w.planet_y(i) * canvas.height / 8 + canvas.height / 2
