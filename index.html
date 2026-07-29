@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icons.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="error-root" style="display:none;position:fixed;inset:0;z-index:99999;background:#080c14;color:#ef4444;font-family:monospace;padding:24px;overflow:auto;font-size:13px;white-space:pre-wrap"></div>
+    <div id="root"></div>
+    <script>
+      window.onerror = function(msg, url, line, col, err) {
+        var el = document.getElementById('error-root');
+        el.style.display = 'block';
+        el.innerHTML = '✖ RUNTIME ERROR\n\n' + msg + '\n\nat ' + (url || '') + ':' + line + ':' + col + '\n\n' + (err && err.stack ? err.stack : '') + '\n\n(see browser console for details)';
+        document.getElementById('root').style.display = 'none';
+        return true;
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        var el = document.getElementById('error-root');
+        el.style.display = 'block';
+        el.innerHTML = '✖ UNHANDLED PROMISE REJECTION\n\n' + (e.reason ? e.reason.toString() : 'unknown') + '\n\n' + (e.reason && e.reason.stack ? e.reason.stack : '');
+        document.getElementById('root').style.display = 'none';
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
