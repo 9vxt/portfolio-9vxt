@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
 
@@ -14,7 +14,6 @@ async function loadWasm() {
   return wasm
 }
 
-// WGSL: 48-byte PlanetData (12 floats stride) matches C++ PlanetGPUData
 const planetWGSL = `
 struct PlanetData { pos: vec2f, _vel: vec2f, mass: f32, radius: f32, _pad: vec2f, color: vec3f, _pad2: f32 }
 struct SimParams { scale: f32, aspect: f32, time: f32, _pad: f32 }
@@ -26,8 +25,8 @@ struct VOut { @builtin(position) pos: vec4f, @location(0) col: vec3f, @location(
 
 @vertex
 fn vertMain(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> VOut {
-  let corners = array<vec2f, 4>(vec2f(-1,-1), vec2f(1,-1), vec2f(-1,1), vec2f(1,1));
   let p = planets[ii];
+  let corners = array<vec2f, 4>(vec2f(-1,-1), vec2f(1,-1), vec2f(-1,1), vec2f(1,1));
   let corner = corners[vi];
   let world = p.pos * sim.scale;
   let rad = p.radius * sim.scale;
@@ -124,39 +123,30 @@ async function initSolarGPU(canvas, maxPlanets) {
   console.log('WebGPU initialized')
 
   const scale = 1.0 / 4.0
-  const aspect = canvas.width / canvas.height
 
-  // --- Planet buffer (maxPlanets * 48 = maxPlanets * 12 floats * 4) ---
   const planetBuf = device.createBuffer({
     size: maxPlanets * 12 * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   })
-
-  // --- Shared SimParams uniform (scale, aspect, time, pad = 16 bytes) ---
   const simBuf = device.createBuffer({
     size: 16,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
-
-  // --- Background time uniform ---
   const bgTimeBuf = device.createBuffer({
     size: 4,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
 
-  // --- Trail buffer (maxPlanets * TRAIL_LEN * 32 bytes each) ---
   const trailStage = new Float32Array(maxPlanets * TRAIL_LEN * 8)
   const trailBuf = device.createBuffer({
     size: maxPlanets * TRAIL_LEN * 8 * 4,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   })
 
-  // --- Shader modules ---
   const planetMod = device.createShaderModule({ code: planetWGSL })
   const trailMod = device.createShaderModule({ code: trailWGSL })
   const bgMod = device.createShaderModule({ code: bgWGSL })
 
-  // --- Background pipeline ---
   const bgLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
@@ -173,7 +163,6 @@ async function initSolarGPU(canvas, maxPlanets) {
     entries: [{ binding: 0, resource: { buffer: bgTimeBuf } }],
   })
 
-  // --- Trail pipeline ---
   const trailLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
@@ -194,7 +183,6 @@ async function initSolarGPU(canvas, maxPlanets) {
     ],
   })
 
-  // --- Planet pipeline ---
   const planetLayout = device.createBindGroupLayout({
     entries: [
       { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } },
@@ -215,26 +203,20 @@ async function initSolarGPU(canvas, maxPlanets) {
     ],
   })
 
-  // --- Trail ring buffer (JS-managed) ---
-  const trailXY = new Float32Array(maxPlanets * TRAIL_LEN * 2)
-  const trailHEAD = new Uint32Array(maxPlanets)
-  const trailCNT = new Uint32Array(maxPlanets)
+  // Linear trail arrays: each planet has an array of [x, y] pairs.
+  // Newest appended to end, oldest shifted from front — no ring buffer wrap.
+  const trails = Array.from({ length: maxPlanets }, () => [])
 
   let running = true
   let elapsed = 0
   const w = await loadWasm()
-  // Pre‑fill trail history with initial planet positions (avoid origin‑streak)
+  // Pre-fill every trail point with the planet's starting coordinate
   {
     const ptr = w.get_planets_ptr()
     const init = new Float32Array(w.memory.buffer, ptr, w.planet_count() * 12)
     for (let i = 0; i < w.planet_count(); i++) {
-      const base = i * TRAIL_LEN * 2
       const px = init[i * 12], py = init[i * 12 + 1]
-      for (let j = 0; j < TRAIL_LEN; j++) {
-        trailXY[base + j * 2] = px
-        trailXY[base + j * 2 + 1] = py
-      }
-      trailCNT[i] = TRAIL_LEN
+      for (let j = 0; j < TRAIL_LEN; j++) trails[i].push([px, py])
     }
   }
   let last = performance.now()
@@ -249,39 +231,34 @@ async function initSolarGPU(canvas, maxPlanets) {
     w.step_solar(dt)
     const cnt = w.planet_count()
 
-    // --- Direct WASM memory → GPU buffer copy (48-byte stride) ---
     const ptr = w.get_planets_ptr()
     const src = new Float32Array(w.memory.buffer, ptr, cnt * 12)
     device.queue.writeBuffer(planetBuf, 0, src)
 
-    // --- Update trail ring buffers ---
+    // Append current position to each planet's trail, drop oldest if full
     for (let i = 0; i < cnt; i++) {
-      const base = i * TRAIL_LEN * 2
-      const head = trailHEAD[i]
-      trailXY[base + head * 2] = src[i * 12]
-      trailXY[base + head * 2 + 1] = src[i * 12 + 1]
-      trailHEAD[i] = (head + 1) % TRAIL_LEN
-      trailCNT[i] = Math.min(trailCNT[i] + 1, TRAIL_LEN)
+      trails[i].push([src[i * 12], src[i * 12 + 1]])
+      if (trails[i].length > TRAIL_LEN) trails[i].shift()
     }
 
-    // --- Linearize trail data ---
+    // Linearize trail data: index 0 = oldest (age 0), index N-1 = newest (age 1)
     trailStage.fill(0)
     for (let i = 0; i < cnt; i++) {
-      const hd = trailHEAD[i]
-      const cc = trailCNT[i]
+      const pts = trails[i]
+      const n = pts.length
       for (let j = 0; j < TRAIL_LEN; j++) {
-        let srcIdx, age
-        if (j < cc) {
-          srcIdx = (hd + 1 + j) % TRAIL_LEN
-          age = cc > 1 ? j / (cc - 1) : 1.0
-        } else {
-          srcIdx = hd
-          age = 0
-        }
         const dst = (i * TRAIL_LEN + j) * 8
-        const sx = i * TRAIL_LEN * 2 + srcIdx * 2
-        trailStage[dst] = trailXY[sx]
-        trailStage[dst + 1] = trailXY[sx + 1]
+        const age = j < n && n > 1 ? j / (n - 1) : 0
+        let px, py
+        if (j < n) {
+          px = pts[j][0]
+          py = pts[j][1]
+        } else {
+          px = pts[n - 1][0]
+          py = pts[n - 1][1]
+        }
+        trailStage[dst] = px
+        trailStage[dst + 1] = py
         trailStage[dst + 2] = age
         trailStage[dst + 4] = src[i * 12 + 8]
         trailStage[dst + 5] = src[i * 12 + 9]
@@ -290,16 +267,16 @@ async function initSolarGPU(canvas, maxPlanets) {
     }
     device.queue.writeBuffer(trailBuf, 0, trailStage)
 
-    // --- Write uniforms ---
+    // Uniforms — aspect computed live from current canvas dimensions
+    const aspect = canvas.width / canvas.height
     const simStage = new Float32Array([scale, aspect, elapsed, 0])
     device.queue.writeBuffer(simBuf, 0, simStage)
     device.queue.writeBuffer(bgTimeBuf, 0, new Float32Array([elapsed]))
 
-    // --- Render passes ---
     const enc = device.createCommandEncoder()
     const tex = ctx.getCurrentTexture()
 
-    // Pass 1: Background (full-screen triangle → starfield + nebula)
+    // Pass 1: Background starfield (covers full NDC via correctly-wound triangle)
     const bp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'clear', clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }],
     })
@@ -308,7 +285,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     bp.draw(3, 1, 0, 0)
     bp.end()
 
-    // Pass 2: Trails (one line-strip draw per planet)
+    // Pass 2: Trails (one independent line-strip per planet)
     const tp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
@@ -319,7 +296,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     }
     tp.end()
 
-    // Pass 3: Planets (triangle-strip quads, SDF circle, sun bloom)
+    // Pass 3: Planet circles (SDF, additive blend, sun bloom)
     const pp = enc.beginRenderPass({
       colorAttachments: [{ view: tex.createView(), loadOp: 'load', storeOp: 'store' }],
     })
@@ -343,6 +320,16 @@ export default function WebGPUDemo() {
   const [wasmReady, setWasmReady] = useState(false)
   const cleanupRef = useRef()
 
+  // Dynamic canvas sizing — matches CSS display size × devicePixelRatio
+  const sizeCanvas = useCallback(() => {
+    const c = canvasRef.current
+    if (!c) return
+    const rect = c.getBoundingClientRect()
+    const dpr = window.devicePixelRatio || 1
+    c.width = Math.round(rect.width * dpr)
+    c.height = Math.round(rect.height * dpr)
+  }, [])
+
   useEffect(() => { loadWasm().then(() => setWasmReady(true)).catch(e => console.error('WASM load fail:', e)) }, [])
 
   useEffect(() => {
@@ -350,6 +337,9 @@ export default function WebGPUDemo() {
     setSupported(gpuAvail)
     const canvas = canvasRef.current
     if (!canvas) return
+    sizeCanvas()
+    const ro = new ResizeObserver(sizeCanvas)
+    ro.observe(canvas.parentElement)
     if (gpuAvail) {
       initSolarGPU(canvas, 9)
         .then((c) => { cleanupRef.current = c; setError('') })
@@ -357,8 +347,8 @@ export default function WebGPUDemo() {
     } else {
       console.warn('WebGPU not available, using Canvas2D fallback')
     }
-    return () => { if (cleanupRef.current) cleanupRef.current() }
-  }, [])
+    return () => { if (cleanupRef.current) cleanupRef.current(); ro.disconnect() }
+  }, [sizeCanvas])
 
   useEffect(() => {
     if (supported !== false) return
@@ -380,6 +370,7 @@ export default function WebGPUDemo() {
       const cnt = w.planet_count()
       const ptr = w.get_planets_ptr()
       const data = new Float32Array(w.memory.buffer, ptr, cnt * 12)
+      const aspect = canvas.width / canvas.height
       const sx = data[0] * canvas.width / 8 + canvas.width / 2
       const sy = data[1] * canvas.height / 8 + canvas.height / 2
       const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 60)
@@ -388,8 +379,8 @@ export default function WebGPUDemo() {
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       for (let i = 0; i < cnt; i++) {
-        const px = data[i * 12] * canvas.width / 8 + canvas.width / 2
-        const py = data[i * 12 + 1] * canvas.height / 8 + canvas.height / 2
+        const px = (data[i * 12] * canvas.width / 8 + canvas.width / 2)
+        const py = (data[i * 12 + 1] * canvas.width / 8 * aspect + canvas.height / 2)
         const rad = Math.max(2, data[i * 12 + 5] * canvas.width / 8)
         ctx.beginPath()
         ctx.arc(px, py, rad, 0, Math.PI * 2)
@@ -433,7 +424,7 @@ export default function WebGPUDemo() {
               <p className="text-[10px] font-mono text-[#475569]">Rendering with Canvas2D fallback (WASM physics still active)</p>
             </div>
           )}
-          <canvas ref={canvasRef} width={512} height={320} className="w-full h-auto rounded bg-black" style={{ aspectRatio: '512/320' }} />
+          <canvas ref={canvasRef} className="w-full rounded bg-black block object-center" style={{ aspectRatio: '512/320' }} />
           <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
             <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Render: </span><span className="text-[#22d3ee]">WebGPU</span></div>
             <div className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded"><span className="text-[#475569]">Physics: </span><span className="text-[#34d399]">WASM (C++)</span></div>
