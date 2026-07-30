@@ -103,15 +103,14 @@ function AnimatedName() {
   )
 }
 
-const subtitles = [
-  'Embedded Systems Developer',
-  'OS Framework Architect',
-  'Computer Engineering Student',
-  'Low-Level Programmer',
-  'MIT Aspirant',
-]
-
 export default function Hero() {
+  const subtitles = [
+    'Embedded Systems Developer',
+    'OS Framework Architect',
+    'Computer Engineering Student',
+    'Low-Level Programmer',
+    'MIT Aspirant',
+  ]
   const [subIdx, setSubIdx] = useState(0)
   const [subText, setSubText] = useState('')
   const [subCursor, setSubCursor] = useState(true)
@@ -122,27 +121,16 @@ export default function Hero() {
   }, [])
 
   useEffect(() => {
-    let i = 0; let dir = 1; let t1; let t2; let id
-    const tick = () => {
+    let i = 0; let dir = 1
+    const id = setInterval(() => {
       if (dir === 1) {
         i++
         setSubText(subtitles[subIdx].slice(0, i))
-        if (i >= subtitles[subIdx].length) {
-          clearInterval(id)
-          t1 = setTimeout(() => {
-            dir = -1
-            id = setInterval(() => {
-              i--
-              setSubText(subtitles[subIdx].slice(0, i))
-              if (i <= 0) { clearInterval(id); t2 = setTimeout(() => setSubIdx(p => (p + 1) % subtitles.length), 100) }
-            }, 30)
-          }, 2000)
-        }
+        if (i >= subtitles[subIdx].length) { clearInterval(id); setTimeout(() => { dir = -1; const id2 = setInterval(() => { i--; setSubText(subtitles[subIdx].slice(0, i)); if (i <= 0) { clearInterval(id2); setSubIdx(p => (p + 1) % subtitles.length) } }, 30); return }, 2000) }
       }
-    }
-    id = setInterval(tick, 50)
-    return () => { clearInterval(id); clearTimeout(t1); clearTimeout(t2) }
-  }, [subIdx])
+    }, 50)
+    return () => clearInterval(id)
+  }, [subIdx, subtitles])
 
   return (
     <section id="hero" className="relative min-h-screen w-full overflow-hidden pt-14">
