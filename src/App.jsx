@@ -25,7 +25,6 @@ import Toast from './components/Toast'
 import DynamicTitle from './components/DynamicTitle'
 import ConsoleArt from './components/ConsoleArt'
 import SectionReveal from './components/SectionReveal'
-import VisualEnhancements from './components/VisualEnhancements'
 import SoundToggle from './components/SoundEngine'
 import { onShutdown } from './lib/shutdown'
 
@@ -94,7 +93,6 @@ export default function App() {
         <DynamicTitle />
         <ConsoleArt />
         <SectionReveal />
-        <VisualEnhancements />
         <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
       </div>
     </ErrorBoundary>
