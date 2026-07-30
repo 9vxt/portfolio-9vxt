@@ -207,7 +207,7 @@ export default function Hero() {
           </p>
 
           <div className="flex justify-center gap-3 mt-4 flex-wrap">
-            <a href="#projects" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#3b82f6] text-[#080c14] text-xs font-mono font-semibold hover:bg-[#2563eb] transition-all eng-glow-blue">
+            <a href="#projects" className="group inline-flex items-center gap-2 px-4 py-2 rounded bg-[#3b82f6] text-[#080c14] text-xs font-mono font-semibold hover:bg-[#2563eb] transition-all eng-glow-blue">
               <span>View Projects</span>
               <span className="group-hover:translate-x-0.5 transition-transform">→</span>
             </a>

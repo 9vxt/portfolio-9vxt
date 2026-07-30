@@ -303,7 +303,7 @@ function HelixTube() {
   return (
     <line ref={ref} position={[0, 0.3, -0.6]}>
       <primitive object={positions} />
-      <lineBasicMaterial vertexColors transparent opacity={0.2} linewidth={2} />
+      <lineBasicMaterial vertexColors transparent opacity={0.2} />
     </line>
   )
 }
@@ -313,17 +313,15 @@ function InteractiveStars() {
   const ref = useRef()
   const count = 120
   const data = useMemo(() => {
-    const p = new Float32Array(count * 3); const s = new Float32Array(count); const c = new Float32Array(count * 3)
+    const p = new Float32Array(count * 3); const c = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
       const th = Math.random() * Math.PI * 2; const ph = Math.acos(2 * Math.random() - 1)
       const r = 1.5 + Math.random() * 3.0
       p[i*3] = r * Math.sin(ph) * Math.cos(th); p[i*3+1] = r * Math.sin(ph) * Math.sin(th); p[i*3+2] = r * Math.cos(ph)
-      s[i] = 0.015 + Math.random() * 0.035
       c[i*3] = 0.2 + Math.random() * 0.3; c[i*3+1] = 0.5 + Math.random() * 0.4; c[i*3+2] = 0.8 + Math.random() * 0.2
     }
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(p, 3))
-    g.setAttribute('size', new THREE.BufferAttribute(s, 1))
     g.setAttribute('color', new THREE.BufferAttribute(c, 3))
     return g
   }, [])

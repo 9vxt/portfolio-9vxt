@@ -24,19 +24,15 @@ export default function ShutdownScreen({ onClose }) {
   useEffect(() => {
     playShutdown()
     const ids = []
+    const lastIdx = lines.length - 1
+    const lastLineTime = 80 + lastIdx * 220
     lines.forEach((_, i) => ids.push(setTimeout(() => setVisibleLines(p => [...p, i]), 80 + i * 220)))
     ids.push(setTimeout(() => {
       doneRef.current = true
       setPoweroff(true)
-      ids.push(setTimeout(() => {
-        document.body.style.transition = 'opacity 0.6s'
-        document.body.style.opacity = '0'
-        setTimeout(() => {
-          onClose()
-        }, 700)
-      }, 600))
-    }, 80 + lines.length * 220 + 1200))
-    return () => { ids.forEach(id => { clearTimeout(id); clearInterval(id) }) }
+      setTimeout(() => onClose(), 300)
+    }, lastLineTime + 400))
+    return () => { ids.forEach(clearTimeout) }
   }, [onClose])
 
   useEffect(() => {
@@ -85,8 +81,7 @@ export default function ShutdownScreen({ onClose }) {
         {poweroff && (
           <div className="mt-4 flex flex-col items-center gap-2 text-[10px] font-mono text-[#ef4444]">
             <span className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse" />
-            <span>System halted. Power off...</span>
-            <span className="text-[#475569] mt-2 text-[9px]">You may now close this tab</span>
+            <span>System halted.</span>
           </div>
         )}
       </div>

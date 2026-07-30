@@ -95,7 +95,7 @@ export default function WasmDemo() {
   const [ready, setReady] = useState(false)
   const [showSource, setShowSource] = useState(false)
 
-  useEffect(() => { load().then(() => setReady(true)) }, [])
+  useEffect(() => { let m = true; load().then(() => { if (m) setReady(true) }); return () => { m = false } }, [])
 
   const run = async () => {
     setLoading(true); setLog(''); setResults(null)

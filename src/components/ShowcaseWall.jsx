@@ -24,7 +24,7 @@ export default function ShowcaseWall() {
   const [flip, setFlip] = useState(null)
 
   return (
-    <section className="py-20 bg-[#0a0e17] border-t border-[#1e293b]">
+    <section id="showcase" className="py-20 bg-[#0a0e17] border-t border-[#1e293b]">
       <div ref={ref} className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

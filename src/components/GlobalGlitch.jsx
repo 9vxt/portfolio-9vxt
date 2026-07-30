@@ -55,7 +55,7 @@ export default function GlobalGlitch({ enabled }) {
         const els = pick(count)
         for (const el of els) {
           el.classList.add('gg-active')
-          const duration = 150 + Math.random() * 100
+          const duration = 250 + Math.random() * 100
           const t = setTimeout(() => {
             if (!enabledRef.current) return
             el.classList.remove('gg-active')

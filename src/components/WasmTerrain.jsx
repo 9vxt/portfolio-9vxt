@@ -9,7 +9,7 @@ export default function WasmTerrain({ scrollP = 0 }) {
   const wireRef = useRef()
   const workerRef = useRef()
   const getWorker = () => {
-    if (!workerRef.current) workerRef.current = new Worker('/terrain.worker.js')
+    if (!workerRef.current) workerRef.current = new Worker(new URL('/terrain.worker.js', location.origin))
     return workerRef.current
   }
   const [ready, setReady] = useState(false)

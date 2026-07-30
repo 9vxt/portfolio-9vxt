@@ -38,7 +38,7 @@ export default function ClickParticles() {
     return () => {
       window.removeEventListener('click', handler)
       removalIds.forEach(clearTimeout)
-      document.body.removeChild(container)
+      container.remove()
     }
   }, [])
 

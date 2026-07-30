@@ -55,6 +55,7 @@ export default function About() {
                   <span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
                 </div>
                 <span className="text-xs text-[#475569] font-mono ml-2">about.md — profile</span>
+                <span className="ml-auto text-[9px] font-mono text-[#475569]">~2 min read</span>
               </div>
 
               <div className="space-y-3 text-sm text-[#94a3b8] font-mono leading-relaxed">

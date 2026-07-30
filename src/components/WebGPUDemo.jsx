@@ -387,7 +387,7 @@ export default function WebGPUDemo() {
     if (!canvas) return
     sizeCanvas()
     const ro = new ResizeObserver(sizeCanvas)
-    ro.observe(canvas.parentElement)
+    if (canvas.parentElement) ro.observe(canvas.parentElement)
     if (gpuAvail) {
       initSolarGPU(canvas, 9)
         .then((c) => { cleanupRef.current = c; setError('') })

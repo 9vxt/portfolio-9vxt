@@ -121,12 +121,6 @@ body {
   background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
 }
 
-@keyframes rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-.rainbow-hover:hover { animation: rainbow 2s linear infinite; }
-
 /* CSS-only glitch — no DOM text mutation */
 @keyframes ggFlicker {
   0%   { text-shadow: 0 0 2px #22d3ee; transform: translate(0); }
@@ -140,6 +134,9 @@ body {
   animation: ggFlicker 0.15s ease-in-out 2;
   transition: none;
 }
+
+.magnetic-btn { perspective: 200px; }
+.magnetic-btn:hover { transform: scale(1.05) translateZ(4px); }
 
 @keyframes sectionFallback { to { opacity: 1; transform: translateY(0); } }
 section[id] {
@@ -156,6 +153,8 @@ section[id].section-revealed {
   animation: fadeInUp 0.7s ease-out forwards;
 }
 
+section[id].section-active { border-color: var(--accent, #3b82f6) !important; box-shadow: 0 0 20px var(--accent-dim, rgba(59,130,246,0.1)); }
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -165,6 +164,6 @@ section[id].section-revealed {
   section[id] { opacity: 1; transform: translateY(0); animation: none; }
   section[id].section-revealed { animation: none; opacity: 1; transform: translateY(0); }
   .glitch-active, .gg-active { animation: none !important; }
-  .animate-pulse, .pulse-slow, .float-anim, .blink, .rainbow-hover:hover { animation: none !important; }
+  .animate-pulse, .pulse-slow, .float-anim, .blink { animation: none !important; }
   .eng-card::before { animation: none !important; }
 }

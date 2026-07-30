@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 
-const sections = ['hero', 'about', 'skills', 'learning', 'projects', 'showcase', 'wasm', 'webgpu', 'contact']
+const sections = ['hero', 'about', 'skills', 'learning', 'projects', 'showcase', 'wasm', 'gpu', 'contact']
 
 export default function SectionBreadcrumb() {
   const [active, setActive] = useState('hero')

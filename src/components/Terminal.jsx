@@ -12,6 +12,20 @@ const BANNER = `______     __      __        __  __                             
 | $$  | $$   \\$$  $$| $$  | $$| $$| $$    $$ \\$$    $$| $$       \\$$    $$ \\$$     \\ \\$$     \\
  \\$$   \\$$    \\$$$$  \\$$   \\$$ \\$$ \\$$$$$$$   \\$$$$$$  \\$$        \\$$$$$$$  \\$$$$$$$  \\$$$$$$$`
 
+function scrollDepth() {
+  const max = document.documentElement.scrollHeight - window.innerHeight
+  const pct = max > 0 ? Math.round((window.scrollY / max) * 100) : 0
+  const sections = ['hero','about','skills','learning','projects','showcase','wasm','gpu','contact']
+  let current = sections[0]
+  for (let i = sections.length - 1; i >= 0; i--) {
+    const el = document.getElementById(sections[i])
+    if (el && el.getBoundingClientRect().top <= window.innerHeight / 2) { current = sections[i]; break }
+  }
+  return `Scroll depth: ${pct}%
+Current section: ${current}
+Viewport: ${window.innerWidth}x${window.innerHeight}`
+}
+
 const aboutText = `Hi! I'm Gust (Athibordee Thongboonma).
 I'm a 15-year-old Computer Engineering enthusiast from Thailand.
 Grade 10 @ Watkhienkhet School (Science-Math-Technology Program).
@@ -80,6 +94,9 @@ const commands = {
   cat [file] — Read a file
   echo [txt] — Echo text
   date       — Show date/time
+  clock      — Show current clock
+  scroll     — Scroll depth & viewport info
+  uptime     — Session uptime
   pwd        — Print working directory
   banner     — Show ASCII banner
   neofetch   — Fun system info
@@ -106,6 +123,9 @@ const commands = {
   mit: () => ({ text: easterEggs.mit, type: 'easteregg' }),
   wasm: () => ({ text: easterEggs.wasm, type: 'easteregg' }),
   echo: (args) => ({ text: args || '...', type: 'output' }),
+  scroll: () => ({ text: scrollDepth(), type: 'output' }),
+  clock: () => ({ text: new Date().toLocaleString(), type: 'output' }),
+  uptime: () => ({ text: `Portfolio online since ${new Date(document.querySelector('script')?.getAttribute('data-timestamp') || Date.now()).toLocaleString()}\nCurrent session: ${Math.floor(performance.now() / 1000)}s`, type: 'output' }),
   solar: () => { window.location.hash = '#gpu'; return { text: 'Navigating to Solar System simulation...', type: 'system' } },
 }
 
@@ -138,8 +158,14 @@ export default function Terminal({ className = '' }) {
   const [input, setInput] = useState('')
   const [cmdHistory, setCmdHistory] = useState([])
   const [histIdx, setHistIdx] = useState(-1)
+  const [clock, setClock] = useState('')
   const inputRef = useRef(null)
   const scrollRef = useRef(null)
+
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date().toLocaleTimeString()), 1000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -174,6 +200,10 @@ export default function Terminal({ className = '' }) {
     else if (e.key === 'Tab') { e.preventDefault(); const all = Object.keys(commands).concat(['cat', 'project']); const match = all.find((c) => c.startsWith(input.toLowerCase()) && c !== input.toLowerCase()); if (match) setInput(match) }
   }
 
+  const copyLine = (text) => {
+    navigator.clipboard?.writeText(text).catch(() => {})
+  }
+
   const renderLine = (line, i) => {
     if (line.type === 'blank') return <div key={i} className="h-2" />
     if (line.type === 'input') return (
@@ -185,7 +215,14 @@ export default function Terminal({ className = '' }) {
     if (line.type === 'error') return <p key={i} className="text-[#ef4444] text-xs mb-0.5">{'✖'} {line.text}</p>
     if (line.type === 'easteregg') return <pre key={i} className="text-[#8b5cf6] text-[10px] mb-0.5 leading-tight whitespace-pre">{line.text}</pre>
     if (line.type === 'banner') return <pre key={i} className="text-[#3b82f6] text-[6px] sm:text-[7px] leading-tight whitespace-pre mb-2">{line.text}</pre>
-    return <pre key={i} className="text-[#94a3b8] text-xs mb-0.5 whitespace-pre-wrap leading-relaxed">{line.text}</pre>
+    return (
+      <div key={i} className="group flex items-start gap-1">
+        <pre className="text-[#94a3b8] text-xs mb-0.5 whitespace-pre-wrap leading-relaxed flex-1">{line.text}</pre>
+        <button onClick={() => copyLine(typeof line.text === 'string' ? line.text : '')}
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] font-mono text-[#475569] hover:text-[#3b82f6] shrink-0 mt-0.5"
+          title="Copy output">⎘</button>
+      </div>
+    )
   }
 
   return (
@@ -193,6 +230,7 @@ export default function Terminal({ className = '' }) {
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[#1e293b]" style={{ background: '#0a0e17' }}>
         <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" /><span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" /><span className="w-2.5 h-2.5 rounded-full bg-[#34d399]" />
         <span className="text-xs text-[#475569] ml-2">9vxt@portfolio:~/terminal</span>
+        <span className="ml-auto text-[10px] font-mono" style={{ color: 'var(--accent, #64748b)' }}>{clock}</span>
       </div>
       <div className="p-4 h-56 sm:h-64 overflow-y-auto" ref={scrollRef}>
         {history.map((line, i) => renderLine(line, i))}

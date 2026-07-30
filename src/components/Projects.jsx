@@ -67,11 +67,11 @@ function ProjectCard({ project, index, visible }) {
       </div>
 
       <div className="flex justify-between items-center pt-2 border-t border-[#1e293b]">
-        <button onClick={(e) => e.preventDefault()} className="text-[10px] font-mono text-[#475569] hover:text-[#3b82f6] transition-colors group/link">
-          <span className="text-[#3b82f6] group-hover/link:mr-0.5 transition-all">❯</span> source
+        <button disabled className="text-[10px] font-mono text-[#1e293b] cursor-not-allowed group/link">
+          <span className="text-[#1e293b]">❯</span> source
         </button>
-        <button onClick={(e) => e.preventDefault()} className="text-[10px] font-mono text-[#475569] hover:text-[#3b82f6] transition-colors group/link">
-          <span className="text-[#3b82f6] group-hover/link:mr-0.5 transition-all">❯</span> demo
+        <button disabled className="text-[10px] font-mono text-[#1e293b] cursor-not-allowed group/link">
+          <span className="text-[#1e293b]">❯</span> demo
         </button>
         <span className="text-[9px] font-mono text-[#1e293b]">v2.0.1</span>
       </div>

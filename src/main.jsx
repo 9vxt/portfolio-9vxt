@@ -7,9 +7,10 @@ window.scrollTo(0, 0)
 
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="#"]')
-  if (a) document.documentElement.classList.add('smooth')
+  if (a) {
+    document.documentElement.classList.add('smooth')
+    setTimeout(() => document.documentElement.classList.remove('smooth'), 800)
+  }
 })
-const removeSmooth = () => document.documentElement.classList.remove('smooth')
-document.addEventListener('scroll', removeSmooth, { passive: true })
 
 createRoot(document.getElementById('root')).render(<App />)

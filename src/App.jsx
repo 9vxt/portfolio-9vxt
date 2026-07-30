@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback, memo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
@@ -11,7 +11,6 @@ import WasmDemo from './components/WasmDemo'
 import WebGPUDemo from './components/WebGPUDemo'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
-import { memo } from 'react'
 import FpsMonitor from './components/FpsMonitor'
 import ScrollProgress from './components/ScrollProgress'
 import CursorGlow from './components/CursorGlow'
@@ -27,11 +26,12 @@ import DynamicTitle from './components/DynamicTitle'
 import ConsoleArt from './components/ConsoleArt'
 import SectionReveal from './components/SectionReveal'
 import SoundToggle from './components/SoundEngine'
+import { onShutdown } from './lib/shutdown'
 import ThemeSwitcher from './components/ThemeSwitcher'
 import KeyboardShortcuts from './components/KeyboardShortcuts'
 import SectionBreadcrumb from './components/SectionBreadcrumb'
 import StatsCounter from './components/StatsCounter'
-import CursorTrail from './components/CursorTrail'
+import SectionCounter from './components/SectionCounter'
 
 const MemoHero = memo(Hero)
 const MemoAbout = memo(About)
@@ -43,7 +43,6 @@ const MemoWasmDemo = memo(WasmDemo)
 const MemoWebGPUDemo = memo(WebGPUDemo)
 const MemoContact = memo(Contact)
 const MemoFooter = memo(Footer)
-import { onShutdown } from './lib/shutdown'
 
 export default function App() {
   const [booted, setBooted] = useState(false)
@@ -122,7 +121,7 @@ export default function App() {
         <ThemeSwitcher />
         <KeyboardShortcuts />
         <SectionBreadcrumb />
-        <CursorTrail />
+        <SectionCounter />
         <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
       </div>
     </ErrorBoundary>

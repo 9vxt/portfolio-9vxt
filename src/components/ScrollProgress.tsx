@@ -1,28 +1,28 @@
 import { useRef, useEffect } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-gsap.registerPlugin(ScrollTrigger)
 
 export default function ScrollProgress() {
   const barRef = useRef<HTMLDivElement>(null)
+  const rafRef = useRef<number>(0)
 
   useEffect(() => {
     const el = barRef.current
     if (!el) return
-    const ctx = gsap.context(() => {
-      gsap.to(el, {
-        scaleX: 1,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: document.body,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 0,
-        },
+
+    const onScroll = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      rafRef.current = requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight
+        const pct = max > 0 ? window.scrollY / max : 0
+        el.style.transform = `scaleX(${Math.min(pct, 1)})`
       })
-    })
-    return () => ctx.revert()
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(rafRef.current)
+    }
   }, [])
 
   return (
