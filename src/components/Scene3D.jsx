@@ -347,12 +347,16 @@ function InteractiveStars() {
 export default function Scene3D({ scrollP = 0 }) {
   const frameRef = useRef(0)
 
+  const rafRef = useRef()
+
   useEffect(() => {
     window._mouseX = 0; window._mouseY = 0
-    let raf
-    const onMove = (e) => { raf = requestAnimationFrame(() => { window._mouseX = (e.clientX / window.innerWidth) * 2 - 1; window._mouseY = -(e.clientY / window.innerHeight) * 2 + 1 }) }
+    const onMove = (e) => {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = requestAnimationFrame(() => { window._mouseX = (e.clientX / window.innerWidth) * 2 - 1; window._mouseY = -(e.clientY / window.innerHeight) * 2 + 1 })
+    }
     window.addEventListener('mousemove', onMove, { passive: true })
-    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf) }
+    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(rafRef.current) }
   }, [])
 
   useFrame(() => { frameRef.current++ })

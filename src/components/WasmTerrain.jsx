@@ -67,6 +67,8 @@ export default function WasmTerrain({ scrollP = 0 }) {
     colors.needsUpdate = true
   }
 
+  const readyRef = useRef(false)
+
   useEffect(() => {
     const w = getWorker(); let mounted = true
     w.onmessage = (e) => {
@@ -74,10 +76,10 @@ export default function WasmTerrain({ scrollP = 0 }) {
       const { id, heights } = e.data
       if (id !== pendingIdRef.current) return
       cacheRef.current = new Float32Array(heights)
-      if (!ready) setReady(true)
+      if (!readyRef.current) { readyRef.current = true; setReady(true) }
     }
     return () => { mounted = false; w.onmessage = null }
-  }, [ready])
+  }, [])
 
   useFrame((state) => {
     const fc = frameCountRef.current++

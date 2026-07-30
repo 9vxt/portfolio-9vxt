@@ -113,6 +113,7 @@ export function playCommand() {
 }
 
 export function playBoot() {
+  if (!_enabled) return
   try {
     const c = getCtx()
     const g = c.createGain()

@@ -45,7 +45,7 @@ function StatusTicker() {
   )
 }
 
-const sectionIds = links.map(l => l.section)
+const sectionIds = ['hero', ...links.map(l => l.section)]
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)

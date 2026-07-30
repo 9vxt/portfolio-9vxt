@@ -480,7 +480,7 @@ export default function WebGPUDemo() {
               <span className="text-[#475569]">$</span> {showSource ? 'hide' : 'view'} source — wasm/solarsystem.cpp
             </button>
             <div className="ml-auto flex gap-2 text-[10px] font-mono">
-              <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Render: <span className="text-[#22d3ee]">WebGPU</span></span>
+              <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Render: <span className={supported ? 'text-[#22d3ee]' : 'text-[#f59e0b]'}>{supported ? 'WebGPU' : 'Canvas2D'}</span></span>
               <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Physics: <span className="text-[#34d399]">WASM (C++)</span></span>
               <span className="px-2 py-1.5 bg-[#0a0e17] border border-[#1e293b] rounded text-[#475569]">Bodies: <span className="text-[#f1f5f9]">9</span></span>
             </div>

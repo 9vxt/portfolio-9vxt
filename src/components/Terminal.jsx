@@ -151,7 +151,7 @@ export default function Terminal({ className = '' }) {
     const trimmed = raw.trim()
     if (!trimmed) return
     playCommand()
-    setCmdHistory((prev) => [...prev, trimmed])
+    setCmdHistory((prev) => [...prev.slice(-99), trimmed])
     setHistIdx(-1)
     const parts = trimmed.split(/\s+/)
     const cmd = parts[0].toLowerCase()

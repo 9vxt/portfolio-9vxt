@@ -43,6 +43,8 @@ export default function GlobalGlitch({ enabled }) {
       return picked
     }
 
+    const refreshTimer = setInterval(refreshCache, 30000)
+
     const schedule = () => {
       const delay = 3000 + Math.random() * 2000
       timerRef.current = setTimeout(() => {
@@ -66,6 +68,7 @@ export default function GlobalGlitch({ enabled }) {
     schedule()
 
     return () => {
+      clearInterval(refreshTimer)
       clearTimeout(timerRef.current)
       removalTimeouts.current.forEach(clearTimeout)
       removalTimeouts.current = []

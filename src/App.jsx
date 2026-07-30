@@ -27,6 +27,11 @@ import DynamicTitle from './components/DynamicTitle'
 import ConsoleArt from './components/ConsoleArt'
 import SectionReveal from './components/SectionReveal'
 import SoundToggle from './components/SoundEngine'
+import ThemeSwitcher from './components/ThemeSwitcher'
+import KeyboardShortcuts from './components/KeyboardShortcuts'
+import SectionBreadcrumb from './components/SectionBreadcrumb'
+import StatsCounter from './components/StatsCounter'
+import CursorTrail from './components/CursorTrail'
 
 const MemoHero = memo(Hero)
 const MemoAbout = memo(About)
@@ -49,7 +54,10 @@ export default function App() {
   const scrollRaf = useRef(null)
 
   const onFinish = useCallback(() => setBooted(true), [])
-  const onClose = useCallback(() => { setClosing(false); setShutdown(false); setBooted(false) }, [])
+  const onClose = useCallback(() => {
+    setClosing(false); setShutdown(false)
+    try { window.close() } catch {}
+  }, [])
 
   useEffect(() => {
     let shutdownTimer
@@ -95,6 +103,7 @@ export default function App() {
           <MemoShowcaseWall />
           <MemoWasmDemo />
           <MemoWebGPUDemo />
+          <StatsCounter />
           <MemoContact />
           <MemoFooter />
         </div>
@@ -110,6 +119,10 @@ export default function App() {
         <DynamicTitle />
         <ConsoleArt />
         <SectionReveal />
+        <ThemeSwitcher />
+        <KeyboardShortcuts />
+        <SectionBreadcrumb />
+        <CursorTrail />
         <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
       </div>
     </ErrorBoundary>

@@ -8,33 +8,43 @@ function MatrixRain() {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
     let id
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = window.innerWidth * dpr
+    canvas.height = window.innerHeight * dpr
+    ctx.scale(dpr, dpr)
     const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン01'
     const fontSize = 10
-    const cols = Math.floor(canvas.width / fontSize)
-    const drops = Array.from({ length: cols }, () => Math.random() * canvas.height)
+    const cols = Math.floor(window.innerWidth / fontSize)
+    const drops = Array.from({ length: cols }, () => Math.random() * window.innerHeight)
     const draw = () => {
       ctx.fillStyle = 'rgba(8, 12, 20, 0.05)'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
       ctx.font = `${fontSize}px monospace`
       for (let i = 0; i < drops.length; i++) {
         if (i % 3 !== 0) continue
-        if (drops[i] - 10 > canvas.height / fontSize && Math.random() > 0.98) { drops[i] = 0; continue }
+        if (drops[i] - 10 > window.innerHeight / fontSize && Math.random() > 0.98) { drops[i] = 0; continue }
         const char = chars[Math.floor(Math.random() * chars.length)]
         ctx.fillStyle = Math.random() > 0.97 ? '#f1f5f9' : '#3b82f6'
         ctx.globalAlpha = 0.2
         ctx.fillText(char, i * fontSize, drops[i] * fontSize)
         ctx.globalAlpha = 1
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0
+        if (drops[i] * fontSize > window.innerHeight && Math.random() > 0.975) drops[i] = 0
         drops[i]++
       }
       id = requestAnimationFrame(draw)
     }
     draw()
-    const onResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    let resizeTimer
+    const onResize = () => {
+      clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(() => {
+        canvas.width = window.innerWidth * dpr
+        canvas.height = window.innerHeight * dpr
+        ctx.scale(dpr, dpr)
+      }, 200)
+    }
     window.addEventListener('resize', onResize)
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', onResize) }
+    return () => { cancelAnimationFrame(id); clearTimeout(resizeTimer); window.removeEventListener('resize', onResize) }
   }, [])
   return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 pointer-events-none" />
 }

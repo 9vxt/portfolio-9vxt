@@ -15,8 +15,10 @@ const lines = [
 
 export default function ShutdownScreen({ onClose }) {
   const [visibleLines, setVisibleLines] = useState([])
+  const [poweroff, setPoweroff] = useState(false)
   const canvasRef = useRef()
   const animRef = useRef()
+  const frameCountRef = useRef(0)
   const doneRef = useRef(false)
 
   useEffect(() => {
@@ -25,9 +27,16 @@ export default function ShutdownScreen({ onClose }) {
     lines.forEach((_, i) => ids.push(setTimeout(() => setVisibleLines(p => [...p, i]), 80 + i * 220)))
     ids.push(setTimeout(() => {
       doneRef.current = true
-      ids.push(setTimeout(onClose, 400))
+      setPoweroff(true)
+      ids.push(setTimeout(() => {
+        document.body.style.transition = 'opacity 0.6s'
+        document.body.style.opacity = '0'
+        setTimeout(() => {
+          onClose()
+        }, 700)
+      }, 600))
     }, 80 + lines.length * 220 + 1200))
-    return () => { doneRef.current = true; ids.forEach(id => { clearTimeout(id); clearInterval(id) }) }
+    return () => { ids.forEach(id => { clearTimeout(id); clearInterval(id) }) }
   }, [onClose])
 
   useEffect(() => {
@@ -42,12 +51,14 @@ export default function ShutdownScreen({ onClose }) {
 
     const draw = () => {
       if (doneRef.current) return
-      ctx.fillStyle = 'rgba(8, 12, 20, 0.08)'
+      frameCountRef.current++
+      ctx.fillStyle = 'rgba(8, 12, 20, 0.05)'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.font = '14px monospace'
       for (let i = 0; i < drops.length; i++) {
+        if (frameCountRef.current % 3 !== 0 && i % 2 === 0) continue
         const char = String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96))
-        ctx.fillStyle = `rgba(52, 211, 153, ${0.3 + Math.random() * 0.5})`
+        ctx.fillStyle = `rgba(52, 211, 153, ${0.2 + Math.random() * 0.4})`
         ctx.fillText(char, i * 14, drops[i] * 14)
         if (drops[i] * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0
         drops[i]++
@@ -59,22 +70,23 @@ export default function ShutdownScreen({ onClose }) {
   }, [])
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#080c14]" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
-      <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
+    <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#080c14] transition-opacity duration-700 ${poweroff ? 'opacity-0' : 'opacity-100'}`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
+      <canvas ref={canvasRef} className="absolute inset-0 opacity-30" />
       <div className="relative z-10 max-w-md w-full px-6">
         <p className="text-[10px] font-mono text-[#64748b] mb-4 tracking-widest">shutdown</p>
         <div className="space-y-1.5">
           {lines.map((line, i) => visibleLines.includes(i) ? (
-            <p key={i} className="font-mono text-xs">
+            <p key={i} className="font-mono text-xs animate-fadeIn">
               <span className="text-[#ef4444]">[{(i + 1).toString().padStart(2, '0')}:00]</span>{' '}
               <span className="text-[#94a3b8]">{line}</span>
             </p>
           ) : null)}
         </div>
-        {visibleLines.length >= lines.length && (
-          <div className="mt-4 flex items-center gap-2 text-[10px] font-mono text-[#ef4444]">
+        {poweroff && (
+          <div className="mt-4 flex flex-col items-center gap-2 text-[10px] font-mono text-[#ef4444]">
             <span className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse" />
             <span>System halted. Power off...</span>
+            <span className="text-[#475569] mt-2 text-[9px]">You may now close this tab</span>
           </div>
         )}
       </div>

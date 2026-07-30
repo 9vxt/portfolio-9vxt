@@ -61,7 +61,7 @@ export default function ShowcaseWall() {
                   <p className="text-xs font-mono text-[#f1f5f9] group-hover:text-[#3b82f6] transition-colors">{t.name}</p>
                   <p className="text-[9px] font-mono text-[#475569] mt-1">{t.desc.split(',')[0]}</p>
                 </div>
-                <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+                <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12, overflowY: 'auto' }}>
                   <p className="text-[10px] font-mono text-[#94a3b8] text-center leading-relaxed">{t.desc}</p>
                 </div>
               </motion.div>

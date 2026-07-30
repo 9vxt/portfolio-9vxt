@@ -120,6 +120,8 @@ export default function SplashScreen({ onFinish }) {
   const [done, setDone] = useState(false)
   const [fading, setFading] = useState(false)
   const [cursor, setCursor] = useState(true)
+  const enteredRef = useRef(false)
+  const timeoutRef = useRef()
 
   useEffect(() => {
     let cancelled = false
@@ -138,11 +140,13 @@ export default function SplashScreen({ onFinish }) {
   }, [])
 
   const handleEnter = useCallback(() => {
+    if (enteredRef.current) return
+    enteredRef.current = true
+    clearTimeout(timeoutRef.current)
     enableSound()
     playBoot()
     setFading(true)
-    const t = setTimeout(onFinish, 700)
-    return () => clearTimeout(t)
+    timeoutRef.current = setTimeout(onFinish, 700)
   }, [onFinish])
 
   useEffect(() => {
