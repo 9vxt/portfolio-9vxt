@@ -5,16 +5,11 @@ import App from './App.jsx'
 history.scrollRestoration = 'manual'
 window.scrollTo(0, 0)
 
-if (window.location.hash) {
-  history.replaceState(null, '', window.location.pathname + window.location.search)
-}
-
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="#"]')
   if (a) document.documentElement.classList.add('smooth')
 })
-document.addEventListener('scroll', () => {
-  document.documentElement.classList.remove('smooth')
-}, { once: true })
+const removeSmooth = () => document.documentElement.classList.remove('smooth')
+document.addEventListener('scroll', removeSmooth, { passive: true })
 
 createRoot(document.getElementById('root')).render(<App />)

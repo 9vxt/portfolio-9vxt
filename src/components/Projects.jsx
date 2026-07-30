@@ -67,12 +67,12 @@ function ProjectCard({ project, index, visible }) {
       </div>
 
       <div className="flex justify-between items-center pt-2 border-t border-[#1e293b]">
-        <a href="#" className="text-[10px] font-mono text-[#475569] hover:text-[#3b82f6] transition-colors group/link">
+        <button onClick={(e) => e.preventDefault()} className="text-[10px] font-mono text-[#475569] hover:text-[#3b82f6] transition-colors group/link">
           <span className="text-[#3b82f6] group-hover/link:mr-0.5 transition-all">❯</span> source
-        </a>
-        <a href="#" className="text-[10px] font-mono text-[#475569] hover:text-[#3b82f6] transition-colors group/link">
+        </button>
+        <button onClick={(e) => e.preventDefault()} className="text-[10px] font-mono text-[#475569] hover:text-[#3b82f6] transition-colors group/link">
           <span className="text-[#3b82f6] group-hover/link:mr-0.5 transition-all">❯</span> demo
-        </a>
+        </button>
         <span className="text-[9px] font-mono text-[#1e293b]">v2.0.1</span>
       </div>
     </motion.div>

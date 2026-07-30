@@ -1,14 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 const COLORS = ['#3b82f6', '#22d3ee', '#8b5cf6', '#34d399', '#f59e0b']
 
 export default function ClickParticles() {
-  const containerRef = useRef()
-
   useEffect(() => {
     const container = document.createElement('div')
     container.className = 'fixed inset-0 pointer-events-none z-[9997]'
     document.body.appendChild(container)
+    const removalIds = []
 
     const spawn = (x, y) => {
       const count = 8 + Math.floor(Math.random() * 6)
@@ -30,13 +29,17 @@ export default function ClickParticles() {
           p.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`
           p.style.opacity = '0'
         })
-        setTimeout(() => p.remove(), 900)
+        removalIds.push(setTimeout(() => p.remove(), 900))
       }
     }
 
     const handler = (e) => spawn(e.clientX, e.clientY)
     window.addEventListener('click', handler)
-    return () => { window.removeEventListener('click', handler); document.body.removeChild(container) }
+    return () => {
+      window.removeEventListener('click', handler)
+      removalIds.forEach(clearTimeout)
+      document.body.removeChild(container)
+    }
   }, [])
 
   return null

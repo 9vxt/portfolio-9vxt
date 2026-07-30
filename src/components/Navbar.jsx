@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PingIndicator from './PingIndicator'
 
@@ -30,12 +30,13 @@ const statusMessages = ['ALL SYSTEMS NOMINAL', 'KERNEL: RUNNING', 'WASM: LOADED'
 function StatusTicker() {
   const [idx, setIdx] = useState(0)
   const [fade, setFade] = useState(true)
+  const fadeTimeoutRef = useRef()
   useEffect(() => {
     const id = setInterval(() => {
       setFade(false)
-      setTimeout(() => { setIdx(p => (p + 1) % statusMessages.length); setFade(true) }, 300)
+      fadeTimeoutRef.current = setTimeout(() => { setIdx(p => (p + 1) % statusMessages.length); setFade(true) }, 300)
     }, 2500)
-    return () => clearInterval(id)
+    return () => { clearInterval(id); clearTimeout(fadeTimeoutRef.current) }
   }, [])
   return (
     <span className={`text-[9px] font-mono text-[#34d399] tracking-wider transition-opacity duration-300 ${fade ? 'opacity-100' : 'opacity-0'}`}>

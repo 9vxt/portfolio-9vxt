@@ -41,12 +41,13 @@ function MatrixRain() {
 
 function GlitchText({ children }) {
   const [glitching, setGlitching] = useState(false)
+  const offTimerRef = useRef()
   useEffect(() => {
     const id = setInterval(() => {
       setGlitching(true)
-      setTimeout(() => setGlitching(false), 200)
+      offTimerRef.current = setTimeout(() => setGlitching(false), 200)
     }, 3000 + Math.random() * 2000)
-    return () => clearInterval(id)
+    return () => { clearInterval(id); clearTimeout(offTimerRef.current) }
   }, [])
   return (
     <span className={`relative inline-block transition-none ${glitching ? 'glitch-active' : ''}`}>
@@ -66,7 +67,6 @@ const heroNames = [
 
 function AnimatedName() {
   const [nameIdx, setNameIdx] = useState(0)
-  const [typing, setTyping] = useState(true)
   const [display, setDisplay] = useState('')
   const [cursor, setCursor] = useState(true)
   const fullName = heroNames[nameIdx]
@@ -77,14 +77,12 @@ function AnimatedName() {
   }, [])
 
   useEffect(() => {
-    setTyping(true)
     let i = 0
     const id = setInterval(() => {
       i++
       setDisplay(fullName.slice(0, i))
       if (i >= fullName.length) {
         clearInterval(id)
-        setTyping(false)
       }
     }, 60)
     const switchId = setTimeout(() => {
@@ -122,15 +120,25 @@ export default function Hero() {
   }, [])
 
   useEffect(() => {
-    let i = 0; let dir = 1
-    const id = setInterval(() => {
-      if (dir === 1) {
-        i++
-        setSubText(subtitles[subIdx].slice(0, i))
-        if (i >= subtitles[subIdx].length) { clearInterval(id); setTimeout(() => { dir = -1; const id2 = setInterval(() => { i--; setSubText(subtitles[subIdx].slice(0, i)); if (i <= 0) { clearInterval(id2); setSubIdx(p => (p + 1) % subtitles.length) } }, 30); return }, 2000) }
+    const ids = []
+    let i = 0
+    const typeId = setInterval(() => {
+      i++
+      setSubText(subtitles[subIdx].slice(0, i))
+      if (i >= subtitles[subIdx].length) {
+        clearInterval(typeId)
+        ids.push(setTimeout(() => {
+          const backId = setInterval(() => {
+            i--
+            setSubText(subtitles[subIdx].slice(0, i))
+            if (i <= 0) { clearInterval(backId); setSubIdx(p => (p + 1) % subtitles.length) }
+          }, 30)
+          ids.push(backId)
+        }, 2000))
       }
     }, 50)
-    return () => clearInterval(id)
+    ids.push(typeId)
+    return () => ids.forEach(id => { clearTimeout(id); clearInterval(id) })
   }, [subIdx])
 
   return (

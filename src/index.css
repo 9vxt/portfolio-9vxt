@@ -55,6 +55,11 @@ body {
 }
 .eng-card:hover::before { opacity: 0.5; }
 
+@supports not (mask-composite: exclude) {
+  .eng-card::before { display: none; }
+  .eng-card:hover { box-shadow: 0 0 15px rgba(59,130,246,0.15); }
+}
+
 @keyframes gradSpin {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -136,8 +141,8 @@ body {
 }
 
 section[id] {
-  opacity: 1;
-  transform: translateY(0);
+  opacity: 0;
+  transform: translateY(20px);
 }
 section[id].section-revealed {
   animation: fadeInUp 0.7s ease-out forwards;

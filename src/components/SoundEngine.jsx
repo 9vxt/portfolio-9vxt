@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 let ctx = null
 let masterGain = null
@@ -180,13 +180,14 @@ export function playClick() {
   playBlip(1200, 0.04, 0.015)
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('click', () => { if (_enabled) playClick() }, { passive: true })
-  setTimeout(() => { if (!_enabled) enableSound() }, 5000)
-}
-
 export default function SoundToggle() {
   const [on, setOn] = useState(_enabled)
+
+  useEffect(() => {
+    return () => {
+      disableSound()
+    }
+  }, [])
 
   const toggle = useCallback(() => {
     const v = toggleSound()

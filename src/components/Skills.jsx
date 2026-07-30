@@ -1,5 +1,6 @@
 import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 
 const categories = [
   {
@@ -67,12 +68,13 @@ function SkillCard({ cat, index, visible }) {
 
 function SkillRow({ skill, index, visible, parentIndex }) {
   const [w, setW] = useState(0)
+  const revealed = useRef(false)
   useEffect(() => {
-    if (visible) {
-      setW(0)
+    if (visible && !revealed.current) {
+      revealed.current = true
       const timer = setTimeout(() => setW(skill.level), 200 + index * 100 + parentIndex * 50)
       return () => clearTimeout(timer)
-    } else { setW(0) }
+    }
   }, [visible, skill.level, index, parentIndex])
 
   return (
@@ -88,8 +90,6 @@ function SkillRow({ skill, index, visible, parentIndex }) {
     </div>
   )
 }
-
-import { useEffect, useState } from 'react'
 
 export default function Skills() {
   const [ref, visible] = useOnScreen(0.05)

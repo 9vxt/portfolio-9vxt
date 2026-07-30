@@ -21,9 +21,13 @@ export default function ShutdownScreen({ onClose }) {
 
   useEffect(() => {
     playShutdown()
-    lines.forEach((line, i) => setTimeout(() => setVisibleLines((p) => [...p, i]), 80 + i * 220))
-    const timer = setTimeout(() => { doneRef.current = true; setTimeout(onClose, 400) }, 80 + lines.length * 220 + 1200)
-    return () => clearTimeout(timer)
+    const ids = []
+    lines.forEach((_, i) => ids.push(setTimeout(() => setVisibleLines(p => [...p, i]), 80 + i * 220)))
+    ids.push(setTimeout(() => {
+      doneRef.current = true
+      ids.push(setTimeout(onClose, 400))
+    }, 80 + lines.length * 220 + 1200))
+    return () => { doneRef.current = true; ids.forEach(id => { clearTimeout(id); clearInterval(id) }) }
   }, [onClose])
 
   useEffect(() => {
@@ -51,7 +55,7 @@ export default function ShutdownScreen({ onClose }) {
       animRef.current = requestAnimationFrame(draw)
     }
     draw()
-    return () => cancelAnimationFrame(animRef.current)
+    return () => { doneRef.current = true; cancelAnimationFrame(animRef.current) }
   }, [])
 
   return (

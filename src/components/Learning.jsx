@@ -1,6 +1,6 @@
 import useOnScreen from '../hooks/useOnScreen'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const courses = [
   { code: 'CS50x', name: 'Harvard CS50 — Intro to CS', type: 'course', status: 'active', progress: 72, color: '#ef4444' },
@@ -22,12 +22,13 @@ const goals = [
 
 function ProgressBar({ course, index, visible }) {
   const [w, setW] = useState(0)
+  const revealed = useRef(false)
   useEffect(() => {
-    if (visible) {
-      setW(0)
+    if (visible && !revealed.current) {
+      revealed.current = true
       const timer = setTimeout(() => setW(course.progress), 100 + index * 60)
       return () => clearTimeout(timer)
-    } else { setW(0) }
+    }
   }, [visible, course.progress, index])
 
   const statusColor = course.status === 'active' ? 'text-[#34d399]'

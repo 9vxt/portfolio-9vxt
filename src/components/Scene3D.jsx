@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import WasmTerrain from './WasmTerrain'
 
-let frame = 0
+const frameObj = { current: 0 }
 
 const vertexShader = `
 uniform float uTime;
@@ -54,8 +54,7 @@ function IcosahedronShader({ scrollP }) {
   }), [])
 
   useFrame((st) => {
-    frame++
-    if (frame % 2 !== 0) return
+    if (frameObj.current % 2 !== 0) return
     const t = st.clock.elapsedTime
     uniforms.uTime.value = t
     uniforms.uScroll.value += (scrollP - uniforms.uScroll.value) * 0.05
@@ -98,7 +97,7 @@ function TorusSpiral({ scrollP }) {
   }, [])
 
   useFrame(() => {
-    if (frame % 3 !== 0) return
+    if (frameObj.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.x += 0.003 + mx * 0.001 + scrollP * 0.002
@@ -115,7 +114,7 @@ function FloatGeo({ geom, pos, color, speed = 1, mf = 1, wire = true, scrollP = 
   const ref = useRef()
   const off = useMemo(() => Math.random() * Math.PI * 2, [])
   useFrame((st) => {
-    if (frame % 2 !== 0 && !wire) return
+    if (frameObj.current % 2 !== 0 && !wire) return
     const t = st.clock.elapsedTime
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
@@ -152,7 +151,7 @@ function ShaderParticles({ scrollP }) {
   }, [])
 
   useFrame(() => {
-    if (frame % 3 !== 0) return
+    if (frameObj.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.y += 0.001 + mx * 0.0003 + scrollP * 0.001
@@ -180,7 +179,7 @@ function Rings({ scrollP }) {
     return { ...c, pts }
   }), [])
   useFrame(() => {
-    if (frame % 3 !== 0) return
+    if (frameObj.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!gr.current) return
     gr.current.rotation.x += 0.002 + mx * 0.0008 + scrollP * 0.002
@@ -190,10 +189,10 @@ function Rings({ scrollP }) {
     <group ref={gr} position={[0, 0.4 - scrollP * 0.3, 0]}>
       {data.map((d, i) => (
         <group key={i} rotation={[d.rx, d.ry, 0]}>
-          <lineSegments>
+          <line>
             <bufferGeometry><bufferAttribute attach="attributes-position" count={seg + 1} array={d.pts} itemSize={3} /></bufferGeometry>
             <lineBasicMaterial color={d.c} transparent opacity={d.o} />
-          </lineSegments>
+          </line>
         </group>
       ))}
     </group>
@@ -243,7 +242,7 @@ function OrbitingShapes() {
     return arr
   }, [])
   useFrame((st) => {
-    if (frame % 2 !== 0) return
+    if (frameObj.current % 2 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!groupRef.current) return
     groupRef.current.children.forEach((child, i) => {
@@ -288,7 +287,7 @@ function HelixTube() {
     return g
   }, [])
   useFrame(() => {
-    if (frame % 2 !== 0) return
+    if (frameObj.current % 2 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.x = my * 0.3
@@ -321,7 +320,7 @@ function InteractiveStars() {
     return g
   }, [])
   useFrame(() => {
-    if (frame % 3 !== 0) return
+    if (frameObj.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.y = mx * 0.4
@@ -345,6 +344,8 @@ export default function Scene3D({ scrollP = 0 }) {
     window.addEventListener('mousemove', onMove, { passive: true })
     return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf) }
   }, [])
+
+  useFrame(() => { frameObj.current++ })
 
   return (
     <>

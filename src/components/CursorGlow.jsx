@@ -7,6 +7,8 @@ export default function CursorGlow() {
     const el = glowRef.current
     if (!el) return
     let raf
+    el.style.left = '-9999px'
+    el.style.top = '-9999px'
     const onMove = (e) => {
       raf = requestAnimationFrame(() => {
         el.style.left = e.clientX + 'px'
@@ -24,7 +26,6 @@ export default function CursorGlow() {
         width: 300, height: 300, borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)',
         transform: 'translate(-50%, -50%)',
-        transition: 'left 0.05s, top 0.05s',
       }}
     />
   )

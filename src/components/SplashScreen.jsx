@@ -23,7 +23,6 @@ const bootMessages = [
   'System ready — awaiting input       ',
 ]
 
-let uid = 0
 function rand(min, max) { return min + Math.random() * (max - min) }
 
 function ParticleBg() {
@@ -50,9 +49,6 @@ function ParticleBg() {
     const draw = () => {
       ctx.clearRect(0, 0, w, h)
 
-      // draw connections
-      ctx.strokeStyle = 'rgba(59,130,246,0.04)'
-      ctx.lineWidth = 0.5
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
@@ -67,7 +63,6 @@ function ParticleBg() {
         }
       }
 
-      // draw particles
       for (const p of particles) {
         p.x += p.vx
         p.y += p.vy
@@ -82,7 +77,10 @@ function ParticleBg() {
       id = requestAnimationFrame(draw)
     }
     draw()
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', resize) }
+    let resizeTimer
+    const debouncedResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 100) }
+    window.addEventListener('resize', debouncedResize)
+    return () => { cancelAnimationFrame(id); clearTimeout(resizeTimer); window.removeEventListener('resize', debouncedResize) }
   }, [])
 
   return <canvas ref={ref} className="absolute inset-0 pointer-events-none opacity-60" />
@@ -126,22 +124,19 @@ export default function SplashScreen({ onFinish }) {
   const started = useRef(false)
 
   useEffect(() => {
-    const id = setInterval(() => setCursor(p => !p), 530)
-    return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
     if (started.current) return
     started.current = true
     let i = 0
+    let bootTimer
     const next = () => {
       if (i >= bootMessages.length) { setDone(true); return }
       setLineIdx(i)
       setProgress(Math.round(((i + 1) / bootMessages.length) * 100))
       i++
-      setTimeout(next, 140 + Math.random() * 220)
+      bootTimer = setTimeout(next, 140 + Math.random() * 220)
     }
     next()
+    return () => clearTimeout(bootTimer)
   }, [])
 
   const handleEnter = useCallback(() => {
@@ -153,11 +148,13 @@ export default function SplashScreen({ onFinish }) {
 
   useEffect(() => {
     if (!done) return
+    const cursorId = setInterval(() => setCursor(p => !p), 530)
     window.addEventListener('keydown', handleEnter, { once: true })
     window.addEventListener('click', handleEnter, { once: true })
     const fb = setTimeout(handleEnter, 8000)
     return () => {
       clearTimeout(fb)
+      clearInterval(cursorId)
       window.removeEventListener('keydown', handleEnter)
       window.removeEventListener('click', handleEnter)
     }

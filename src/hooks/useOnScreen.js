@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 export default function useOnScreen(threshold = 0.1) {
-  const ref = useRef(null)
   const [visible, setVisible] = useState(false)
+  const observerRef = useRef()
 
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
+  const ref = useCallback((node) => {
+    if (observerRef.current) observerRef.current.disconnect()
+    if (!node) return
     const obs = new IntersectionObserver(
       ([e]) => setVisible(e.isIntersecting),
       { threshold }
     )
-    obs.observe(el)
-    return () => obs.disconnect()
+    obs.observe(node)
+    observerRef.current = obs
   }, [threshold])
 
   return [ref, visible]

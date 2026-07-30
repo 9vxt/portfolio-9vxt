@@ -101,16 +101,23 @@ export default function WasmDemo() {
     const w = await load()
     if (!w) { setLog('✖ WASM failed to load'); setLoading(false); return }
     const res = []
+    const logLines = []
     for (const t of tests) {
-      setLog(prev => prev + `Running ${t.name}...\n`)
+      logLines.push(`Running ${t.name}...`)
       const js0 = performance.now(); const jsR = t.jsFn(); const jsT = performance.now() - js0
-      const ws0 = performance.now(); const wsR = w[t.wasmFn](t.arg); const wsT = performance.now() - ws0
+      let wsT = 0, wsR = 'err'
+      try {
+        const ws0 = performance.now()
+        wsR = w[t.wasmFn](t.arg)
+        wsT = performance.now() - ws0
+      } catch (e) { wsT = 0; wsR = 'ERR'; logLines.push(`  ⚠ WASM error: ${e.message}`); continue }
       const spd = jsT / wsT
       res.push({ name: t.name, jsT, wsT, spd, jsR, wsR })
-      setLog(prev => prev + `  JS: ${jsT.toFixed(1)}ms | WASM: ${wsT.toFixed(1)}ms | ${spd.toFixed(1)}x faster\n`)
+      logLines.push(`  JS: ${jsT.toFixed(1)}ms | WASM: ${wsT.toFixed(1)}ms | ${spd.toFixed(1)}x faster`)
     }
     setResults(res)
-    setLog(prev => prev + '\n✔ Benchmarks complete! C++ → WASM running on portfolio.wasm\n')
+    logLines.push('', '✔ Benchmarks complete! C++ → WASM running on portfolio.wasm')
+    setLog(logLines.join('\n'))
     setLoading(false)
   }
 

@@ -26,6 +26,9 @@ function pickElements(count) {
 
 export default function GlobalGlitch({ enabled }) {
   const timerRef = useRef()
+  const removalTimeouts = useRef([])
+  const enabledRef = useRef(enabled)
+  enabledRef.current = enabled
 
   useEffect(() => {
     if (!enabled) {
@@ -34,11 +37,9 @@ export default function GlobalGlitch({ enabled }) {
     }
 
     const schedule = () => {
-      if (!enabled) return
       const delay = 3000 + Math.random() * 2000
       timerRef.current = setTimeout(() => {
-        if (!enabled) return
-        // clear stale
+        if (!enabledRef.current) return
         document.querySelectorAll('.gg-active').forEach(el => el.classList.remove('gg-active'))
 
         const count = 1 + Math.floor(Math.random() * 3)
@@ -46,7 +47,11 @@ export default function GlobalGlitch({ enabled }) {
         for (const el of els) {
           el.classList.add('gg-active')
           const duration = 150 + Math.random() * 100
-          setTimeout(() => el.classList.remove('gg-active'), duration)
+          const t = setTimeout(() => {
+            if (!enabledRef.current) return
+            el.classList.remove('gg-active')
+          }, duration)
+          removalTimeouts.current.push(t)
         }
         schedule()
       }, delay)
@@ -55,6 +60,8 @@ export default function GlobalGlitch({ enabled }) {
 
     return () => {
       clearTimeout(timerRef.current)
+      removalTimeouts.current.forEach(clearTimeout)
+      removalTimeouts.current = []
       document.querySelectorAll('.gg-active').forEach(el => el.classList.remove('gg-active'))
     }
   }, [enabled])

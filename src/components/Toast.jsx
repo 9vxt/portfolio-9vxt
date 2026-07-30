@@ -10,15 +10,21 @@ const messages = [
 export default function Toast() {
   const [idx, setIdx] = useState(0)
   const [visible, setVisible] = useState(true)
+  const [done, setDone] = useState(false)
 
   useEffect(() => {
     const timers = []
     messages.forEach((_, i) => {
       timers.push(setTimeout(() => { setIdx(i); setVisible(true) }, i * 1800))
-      timers.push(setTimeout(() => setVisible(false), i * 1800 + 1200))
+      timers.push(setTimeout(() => {
+        if (i === messages.length - 1) setDone(true)
+        else setVisible(false)
+      }, i * 1800 + 1200))
     })
     return () => timers.forEach(clearTimeout)
   }, [])
+
+  if (done) return null
 
   return (
     <div

@@ -154,6 +154,8 @@ fn bgFrag(@location(0) uv: vec2f) -> @location(0) vec4f {
 `
 
 async function initSolarGPU(canvas, maxPlanets) {
+  let device = null
+  try {
   if (!navigator.gpu) {
     console.error('WebGPU not available')
     throw new Error('no WebGPU')
@@ -163,7 +165,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     console.error('No WebGPU adapter found')
     throw new Error('no adapter')
   }
-  const device = await adapter.requestDevice()
+  device = await adapter.requestDevice()
   const ctx = canvas.getContext('webgpu')
   ctx.configure({ device, format: 'bgra8unorm', alphaMode: 'premultiplied' })
   console.log('WebGPU initialized')
@@ -351,6 +353,10 @@ async function initSolarGPU(canvas, maxPlanets) {
       initTrails()
       elapsed = 0
     },
+  }
+  } catch (e) {
+    if (device) device.destroy()
+    throw e
   }
 }
 

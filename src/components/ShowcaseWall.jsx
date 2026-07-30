@@ -46,9 +46,13 @@ export default function ShowcaseWall() {
               transition={{ duration: 0.4, delay: i * 0.05 }}
               onClick={() => setFlip(flip === `t${i}` ? null : `t${i}`)}
               className="eng-card p-4 cursor-pointer select-none group"
-              style={{ perspective: 600 }}
+              style={{ perspective: 600, position: 'relative' }}
             >
-              <div style={{ transformStyle: 'preserve-3d', transition: 'transform 0.4s', transform: flip === `t${i}` ? 'rotateY(180deg)' : 'rotateY(0)' }}>
+              <motion.div
+                animate={{ rotateY: flip === `t${i}` ? 180 : 0 }}
+                transition={{ duration: 0.4 }}
+                style={{ transformStyle: 'preserve-3d' }}
+              >
                 <div style={{ backfaceVisibility: 'hidden' }}>
                   <div className="w-8 h-8 rounded border border-[#1e293b] flex items-center justify-center text-xs font-mono mb-2"
                     style={{ color: t.color, borderColor: t.color + '40' }}>
@@ -60,7 +64,7 @@ export default function ShowcaseWall() {
                 <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
                   <p className="text-[10px] font-mono text-[#94a3b8] text-center leading-relaxed">{t.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
           ))}
         </div>

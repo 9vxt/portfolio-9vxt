@@ -37,10 +37,12 @@ export default function App() {
   const scrollRaf = useRef(null)
 
   useEffect(() => {
+    let shutdownTimer
     onShutdown(() => {
       setClosing(true)
-      setTimeout(() => { setClosing(false); setShutdown(true) }, 1200)
+      shutdownTimer = setTimeout(() => { setClosing(false); setShutdown(true) }, 1200)
     })
+    return () => clearTimeout(shutdownTimer)
   }, [])
 
   useEffect(() => {
@@ -52,13 +54,13 @@ export default function App() {
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(scrollRaf.current) }
   }, [])
 
   return (
     <ErrorBoundary>
       {!booted && <SplashScreen onFinish={() => setBooted(true)} />}
-      {shutdown && <ShutdownScreen onClose={() => { window.open('', '_self'); window.close() }} />}
+      {shutdown && <ShutdownScreen onClose={() => { setClosing(false); setShutdown(false); setBooted(false) }} />}
       <div className={`bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines transition-all duration-[1200ms] ease-in-out ${
         closing ? 'opacity-0 scale-[0.97] pointer-events-none overflow-hidden' : ''
       }`}>

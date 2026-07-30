@@ -10,6 +10,14 @@ export default class ErrorBoundary extends Component {
     return { error: error.toString(), info: error.stack || '' }
   }
 
+  componentDidCatch(error, errorInfo) {
+    console.error('[ErrorBoundary] Caught:', error, errorInfo)
+  }
+
+  handleRetry = () => {
+    this.setState({ error: null, info: '' })
+  }
+
   render() {
     if (this.state.error) {
       return (
@@ -28,6 +36,11 @@ export default class ErrorBoundary extends Component {
                 {this.state.info}
               </pre>
             </details>
+            <button onClick={this.handleRetry}
+              className="mt-4 px-4 py-2 text-xs font-mono text-[#34d399] rounded"
+              style={{ border: '1px solid #34d399', background: 'rgba(52,211,153,0.05)' }}>
+              retry
+            </button>
             <p className="text-xs font-mono text-[#64748b] mt-4">
               Check the browser console (F12 → Console) for more details.
             </p>

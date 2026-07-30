@@ -10,7 +10,7 @@ const titles = [
 
 export default function DynamicTitle() {
   useEffect(() => {
-    let i = 0; let dir = 1
+    let i = 0
     const id = setInterval(() => {
       document.title = titles[i % titles.length]
       i++

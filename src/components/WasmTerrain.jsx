@@ -3,14 +3,11 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 const W = 80; const H = 60
-let worker = null
-let reqId = 0
-let pendingId = -1
-let cache = new Float32Array(W * H)
 
+let _worker = null
 function getWorker() {
-  if (!worker) worker = new Worker('/terrain.worker.js')
-  return worker
+  if (!_worker) _worker = new Worker('/terrain.worker.js')
+  return _worker
 }
 
 export default function WasmTerrain({ scrollP = 0 }) {
@@ -19,6 +16,9 @@ export default function WasmTerrain({ scrollP = 0 }) {
   const [ready, setReady] = useState(false)
   const frameCountRef = useRef(0)
   const rotRef = useRef(0)
+  const reqIdRef = useRef(0)
+  const pendingIdRef = useRef(-1)
+  const cacheRef = useRef(new Float32Array(W * H))
 
   const geo = useMemo(() => {
     const g = new THREE.PlaneGeometry(20, 14, W - 1, H - 1)
@@ -39,6 +39,7 @@ export default function WasmTerrain({ scrollP = 0 }) {
 
   function updateColors(pos, colors) {
     const arr = colors.array
+    const cache = cacheRef.current
     for (let i = 0; i < pos.count; i++) {
       const y = Math.floor(i / W), x = i % W
       const h = cache[y * W + x] * 1.4
@@ -72,26 +73,27 @@ export default function WasmTerrain({ scrollP = 0 }) {
     w.onmessage = (e) => {
       if (!mounted) return
       const { id, heights } = e.data
-      if (id !== pendingId) return
-      cache = new Float32Array(heights)
+      if (id !== pendingIdRef.current) return
+      cacheRef.current = new Float32Array(heights)
       if (!ready) setReady(true)
     }
-    return () => { mounted = false }
+    return () => { mounted = false; w.onmessage = null }
   }, [ready])
 
   useFrame((state) => {
     const fc = frameCountRef.current++
 
-    if (fc % 2 === 0) {
+    if (fc % 4 === 0) {
       const t = state.clock.elapsedTime * 0.25
-      const id = ++reqId; pendingId = id
-      getWorker().postMessage({ id, w: W, h: H, t, s: 4.0 })
+      const id = ++reqIdRef.current; pendingIdRef.current = id
+      try { getWorker().postMessage({ id, w: W, h: H, t, s: 4.0 }) } catch {}
     }
 
-    if (fc % 2 === 0 && ready) {
+    if (fc % 4 === 0 && ready) {
       const pos = geo.attributes.position
       const colors = geo.attributes.color
       const wpos = wireGeo.attributes.position
+      const cache = cacheRef.current
       for (let i = 0; i < pos.count; i++) {
         const x = i % W; const y = Math.floor(i / W)
         const h = cache[y * W + x] * 1.4
