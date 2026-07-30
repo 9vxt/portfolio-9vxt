@@ -2,6 +2,9 @@ import { useEffect } from 'react'
 
 const COLORS = ['#3b82f6', '#22d3ee', '#8b5cf6', '#34d399', '#f59e0b']
 
+let activeCount = 0
+const MAX_PARTICLES = 100
+
 export default function ClickParticles() {
   useEffect(() => {
     const container = document.createElement('div')
@@ -10,7 +13,9 @@ export default function ClickParticles() {
     const removalIds = []
 
     const spawn = (x, y) => {
-      const count = 8 + Math.floor(Math.random() * 6)
+      const count = Math.min(8 + Math.floor(Math.random() * 6), MAX_PARTICLES - activeCount)
+      if (count <= 0) return
+      activeCount += count
       for (let i = 0; i < count; i++) {
         const p = document.createElement('div')
         const size = 2 + Math.random() * 3
@@ -29,7 +34,8 @@ export default function ClickParticles() {
           p.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`
           p.style.opacity = '0'
         })
-        removalIds.push(setTimeout(() => p.remove(), 900))
+        const id = setTimeout(() => { p.remove(); activeCount-- }, 900)
+        removalIds.push(id)
       }
     }
 
@@ -39,6 +45,7 @@ export default function ClickParticles() {
       window.removeEventListener('click', handler)
       removalIds.forEach(clearTimeout)
       container.remove()
+      activeCount = 0
     }
   }, [])
 

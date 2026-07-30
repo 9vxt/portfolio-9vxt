@@ -1,25 +1,29 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 const sections = ['hero', 'about', 'skills', 'learning', 'projects', 'showcase', 'wasm', 'gpu', 'contact']
 
 export default function SectionCounter() {
   const [current, setCurrent] = useState(1)
-  const rafRef = useRef(null)
 
   useEffect(() => {
-    const calc = () => {
-      rafRef.current = requestAnimationFrame(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
         let idx = 0
-        for (let i = sections.length - 1; i >= 0; i--) {
-          const el = document.getElementById(sections[i])
-          if (el && el.getBoundingClientRect().top <= window.innerHeight / 2) { idx = i; break }
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            const i = sections.indexOf(e.target.id)
+            if (i >= 0 && i + 1 > idx) idx = i + 1
+          }
         }
-        setCurrent(idx + 1)
-      })
+        setCurrent(idx || 1)
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
+    )
+    for (const id of sections) {
+      const el = document.getElementById(id)
+      if (el) obs.observe(el)
     }
-    window.addEventListener('scroll', calc, { passive: true })
-    calc()
-    return () => { window.removeEventListener('scroll', calc); cancelAnimationFrame(rafRef.current) }
+    return () => obs.disconnect()
   }, [])
 
   return (

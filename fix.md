@@ -2,139 +2,213 @@
 
 ## Executive Summary
 
-The codebase is a React 19 + Three.js portfolio with 34 source files. It uses Vite + Tailwind v4 + Framer Motion + GSAP + R3F. Overall code quality is high — well-structured components with consistent cyberpunk/terminal aesthetic. The audit identified **3 critical bugs**, **7 performance/logic issues**, **9 UI/UX quirks**, and **12 cleanup items**. The most impactful issues are: `handleEnter` cleanup leak in SplashScreen, `playBoot()` bypassing the mute guard, and ScrollToTop + SoundToggle position overlap.
+The portfolio codebase is functionally solid with proper React patterns, good cleanup hygiene, and correct three.js/R3F usage. However, four high-risk clusters exist: **WebGL geometry memory leaks** (never-disposed BufferGeometry), **global window namespace pollution** for mouse coordinates, a **StrictMode interval race** in LoginScreen, and **unbounded DOM/particle accumulation** in ClickParticles. Performance is generally good but several scroll handlers force synchronous layout (`getBoundingClientRect`) every frame. A handful of UI components have dead/broken interactive states. There are no crash-on-load bugs.
+
+| Severity | Count | Description |
+|----------|-------|-------------|
+| 🚨 Critical | 6 | Crashes, memory leaks, data corruption, unhandled promise rejections |
+| ⚠️ Warning | ~20 | Performance bottlenecks, forced layouts, memory leaks, accessibility gaps |
+| 🧹 Info | ~25 | Dead code, unused imports, minor optimizations, code style |
 
 ---
 
 ## 🚨 Critical Bugs & Layout Breakers
 
-### [src/components/SplashScreen.jsx:140-146] — `handleEnter` returns cleanup from `useCallback` (dead code + potential timeout leak)
-- **Code**: `const handleEnter = useCallback(() => { enableSound(); playBoot(); setFading(true); const t = setTimeout(onFinish, 700); return () => clearTimeout(t) }, [onFinish])`. The `return () => clearTimeout(t)` inside `useCallback` is never invoked — `useCallback` ignores the return value of the callback function. The timeout `t` is never cleaned up if `handleEnter` fires multiple times.
-- **Impact**: The timeout `t` can fire `onFinish` after the component unmounts (stale setState), or after the user has already started interacting. Not crash-level, but wastes cycles and triggers setState on unmounted component.
-- **Suggested Fix**: Remove the `return` statement: `clearTimeout(t)` instead of `return () => clearTimeout(t)`.
+### 1. Scene3D — WebGL geometry never disposed (`src/components/Scene3D.jsx`)
+- **Location**: Multiple `useMemo(() => new THREE.BufferGeometry(), [])` in `TorusSpiral` (L85), `ShaderParticles` (L146), `Rings` (L177), `OrbitingShapes` (L226), `HelixTube` (L280), `InteractiveStars` (L315), `FloatGeo` (L118)
+- **Impact**: Every HMR reload or component remount allocates new GPU buffers; old ones are never freed via `.dispose()`. Accumulates GPU memory until tab crash.
+- **Suggested Fix**: Store geometries in refs and dispose on unmount:
+```js
+const geoRef = useRef()
+useMemo(() => { geoRef.current = new THREE.BufferGeometry() }, [])
+useEffect(() => () => geoRef.current?.dispose(), [])
+```
 
-### [src/components/SoundEngine.jsx:115-145] — `playBoot()` lacks `_enabled` guard
-- **Code**: `export function playBoot() { try { const c = getCtx() ... } catch {} }` — unlike `playBlip`, `playCommand`, and `playShutdown`, there is no `if (!_enabled) return` at the top of `playBoot()`.
-- **Impact**: If sound is toggled OFF and the user triggers a boot sequence (shutdown → restart, or resuming session), `playBoot()` plays through `masterGain` even when sound is disabled.
-- **Suggested Fix**: Add `if (!_enabled) return` as the first line of `playBoot()`.
+### 2. Scene3D — Global `window._mouseX` / `window._mouseY` pollution (`src/components/Scene3D.jsx:351-358`)
+- **Impact**: Seven sub-components read these globals; no isolation. If any other script writes to `window._mouseX`, all 3D objects break. The rAF throttling on the setter is pointless since `useFrame` is already rAF-synced. Zombie values persist after unmount.
+- **Suggested Fix**: Move to React context:
+```js
+const MouseCtx = createContext({ x: 0, y: 0 })
+// Provider in Scene3D, consumer via useContext in children
+```
 
-### [src/components/ScrollToTop.jsx:22 + src/components/SoundEngine.jsx:196] — ScrollToTop and SoundToggle occupy the same fixed position (`bottom-3 right-3 z-[999]`)
-- Both components render at `bottom-3 right-3 z-[999]`. When ScrollToTop is visible (scrolled past 400px), it renders directly on top of SoundToggle, making the sound button inaccessible.
-- **Suggested Fix**: Shift ScrollToTop to `bottom-14 right-3` (above SoundToggle), or shift SoundToggle to `left-3` and keep ScrollToTop on the right.
+### 3. ClickParticles — Unbounded particle accumulation (`src/components/ClickParticles.jsx:12-33`)
+- **Impact**: Every click spawns 8-13 DOM particles with 900ms timeouts. Holding Enter or rapid clicking creates thousands of elements and pending timers, causing jank and eventual OOM.
+- **Suggested Fix**: Add a particle cap and reuse:
+```js
+const MAX = 100
+let count = container.childElementCount
+if (count > MAX) for (let i = 0; i < count - MAX; i++) container.firstChild?.remove()
+```
+
+### 4. WebGPUDemo — Unhandled rAF after error (`src/components/WebGPUDemo.jsx:347-359`)
+- **Impact**: If `initSolarGPU` throws synchronously *after* `requestAnimationFrame(frame)` is scheduled, the frame callback runs with a destroyed device → WebGPU crash.
+- **Suggested Fix**: Store rAF handle and cancel on error:
+```js
+const rafId = requestAnimationFrame(frame)
+// in catch: cancelAnimationFrame(rafId); running = false
+```
+
+### 5. WebGPUDemo — WASM memory buffer detachment (`src/components/WebGPUDemo.jsx:284`)
+- **Impact**: `new Float32Array(w.memory.buffer, ptr, cnt * 12)` creates a live view into WASM linear memory. If `step_solar()` triggers `memory.grow()`, the buffer detaches and the view becomes a `RangeError`.
+- **Suggested Fix**: Copy instead of view:
+```js
+new Float32Array(w.memory.buffer.slice(ptr, ptr + cnt * 12 * 4))
+```
+
+### 6. WasmDemo — Unhandled promise rejection in `run()` (`src/components/WasmDemo.jsx:100-102`)
+- **Impact**: `await load()` can reject (network failure for `portfolio.wasm`), producing an unhandled promise rejection that crashes the microtask queue.
+- **Suggested Fix**: Wrap in try-catch:
+```js
+try { const w = await load() } catch (e) { setLog(`Error: ${e.message}`); setLoading(false); return }
+```
 
 ---
 
 ## ⚠️ Performance & Logic Improvements
 
-### [src/components/Hero.jsx:5-40] — `MatrixRain` canvas resize listener lacks debouncing
-- The raw `resize` handler (line 35) fires on every resize event with no debounce, recreating canvas dimensions on every frame of a window drag. Combined with `requestAnimationFrame`, this floods the GPU with canvas resets.
-- **Suggested Fix**: Wrap the resize handler with `clearTimeout`/`setTimeout` debounce (200ms), similar to the pattern used in SplashScreen's `ParticleBg`.
+### 7. Navbar — IntersectionObserver with 5 thresholds (`src/components/Navbar.jsx:62-78`)
+- **Issue**: `threshold: [0, 0.25, 0.5, 0.75, 1]` fires the callback up to 5 times per section per scroll → up to 45 callback invocations per frame.
+- **Fix**: Use `threshold: [0.5]` or a single rootMargin approach.
 
-### [src/components/WasmTerrain.jsx:62-80] — `useEffect` dependency `[ready]` creates misleading dependency pattern
-- The effect sets `ready` inside its own body (line 77: `if (!ready) setReady(true)`). The `[ready]` dep array means the effect re-runs when `ready` becomes true (second run — a no-op due to `!ready` guard and worker.onmessage re-assignment). This is technically safe but confusing and violates the principle that effects shouldn't write to their own deps.
-- **Suggested Fix**: Remove `ready` from the dependency array (`[]`) and rely on the `mounted` flag and the `onmessage` callback. Or use a ref-based ready flag.
+### 8. Navbar — Scroll state update on every pixel (`src/components/Navbar.jsx:55-60`)
+- **Issue**: `setScrolled(window.scrollY > 60)` fires on every scroll event, re-rendering entire Navbar tree.
+- **Fix**: Throttle with rAF:
+```js
+let raf; const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setScrolled(window.scrollY > 60)) }
+```
 
-### [src/components/GlobalGlitch.jsx:46-65] — Cache is never refreshed after initial mount
-- `refreshCache()` queries the DOM once on mount. If new elements are added dynamically (e.g., after splash screen dismissal, WASM section expansion, source code toggle), they are never considered for glitching until the component re-mounts.
-- **Suggested Fix**: Add a `MutationObserver` that calls `refreshCache()` when new nodes are added, or periodically refresh the cache every 30 seconds.
+### 9. SectionBreadcrumb — `getBoundingClientRect()` in scroll loop (`src/components/SectionBreadcrumb.jsx:9-26`)
+- **Issue**: For 9 sections, calls `getBoundingClientRect()` per frame, forcing 9 synchronous layout recalculations.
+- **Fix**: Replace with a single IntersectionObserver.
 
-### [src/components/Scene3D.jsx:348-352] — `_mouseX`/`_mouseY` window globals accumulate listeners on Strict Mode double-mount
-- In React Strict Mode (dev), the `useEffect` runs → cleanup → runs again. The first cleanup calls `removeEventListener` (ok). But two `raf` loops may be active if the cleanup's `cancelAnimationFrame` doesn't cancel the correct one — the closure captures the second `raf` ID but the first `raf` is never cancelled. On HMR, this can accumulate.
-- **Suggested Fix**: Use a single ref for the raf ID, and cancel it in both the cleanup and before a new assignment: `cancelAnimationFrame(rafRef.current); rafRef.current = requestAnimationFrame(...)`.
+### 10. SectionCounter — Same forced-layout issue (`src/components/SectionCounter.jsx:9-23`)
+- **Issue**: Same as #9 — `getBoundingClientRect()` per frame.
+- **Fix**: Replace with IntersectionObserver.
 
-### [src/components/ShutdownScreen.jsx:33] — `doneRef.current = true` is set redundantly
-- Line 33 sets `doneRef.current = true` in the timeout callback, but the cleanup also sets `doneRef.current = true` when the effect re-runs. This is harmless but redundant — the ref starts at `false` and the only guard is `if (doneRef.current) return` in the animation loop. One assignment suffices.
-- **Suggested Fix**: Remove the redundant `doneRef.current = true` from the cleanup or from the timeout callback.
+### 11. Hero — High-rate re-renders from multiple intervals (`src/components/Hero.jsx:50-56, 96-108`)
+- **Issue**: `AnimatedName` updates state every 60ms (typing), cursor every 530ms, subtitle typewriter every 50ms. Combined, Hero re-renders at ~60fps from JS timers alone.
+- **Fix**: Use `requestAnimationFrame` with a single loop and ref-based string building. Or use CSS `@keyframes` for cursor blink.
 
-### [src/components/SplashScreen.jsx:158] — `handleEnter` event listeners don't exclude the auto-timeout from double-firing
-- Line 155: `const fb = setTimeout(handleEnter, 8000)` — when this fires, `handleEnter` plays boot sound and starts fade. But the `keydown`/`click` listeners (registered with `{ once: true }`) may still fire (user clicks/keypresses within the 8s window), causing `handleEnter` to execute again, re-playing boot audio and re-triggering the fade. The `{ once: true }` mitigates this, but the timeout itself is not guarded against double-invocation.
-- **Suggested Fix**: Use a ref guard (`enteredRef.current`) that `handleEnter` checks and sets at its top, with the timeout also respecting it.
+### 12. CursorGlow — Stale rAF callbacks on fast mouse (`src/components/CursorGlow.jsx:12-16`)
+- **Issue**: Every mousemove schedules a new rAF. On a 120Hz mouse, multiple rAFs queue with stale positions, causing visual flicker. Only last rAF ID is cancelled on unmount.
+- **Fix**: Single-rAF pattern with posRef:
+```js
+const pos = useRef({x:-9999,y:-9999}); let raf
+const onMove = e => { pos.current = {x:e.clientX, y:e.clientY}; if(!raf) raf = requestAnimationFrame(() => { el.style.left = pos.current.x+'px'; el.style.top = pos.current.y+'px'; raf = null }) }
+```
+
+### 13. GlobalGlitch — 9 separate `querySelectorAll` calls (`src/components/GlobalGlitch.jsx:24-27`)
+- **Issue**: `SAFE_TAGS.forEach(tag => querySelectorAll(tag))` runs 9 DOM queries every 30 seconds.
+- **Fix**: Single compound selector: `document.querySelectorAll(SAFE_TAGS.join(','))`.
+
+### 14. Scene3D — Frame-skipping creates uneven animation (`src/components/Scene3D.jsx:L57-L66, L101-L107, etc.`)
+- **Issue**: Components use `if (frameRef.current % 2 !== 0) return` / `% 3 !== 0` which creates 30fps / 20fps sub-cycles on a 60fps display.
+- **Fix**: Use `useFrame`'s `delta` parameter for time-based updates instead of frame counting.
+
+### 15. Scene3D — Exponential smoothing never converges (`src/components/Scene3D.jsx:L61`)
+- **Issue**: `uniforms.uScroll.value += (scrollP - uniforms.uScroll.value) * 0.05` — floating-point lerp never exactly reaches target; accumulates drift.
+- **Fix**: Direct set: `uniforms.uScroll.value = scrollP`.
+
+### 16. SoundEngine — AudioContext never closed on unmount (`src/components/SoundEngine.jsx:L4-L8`)
+- **Issue**: Module-level `ctx` lives forever; HMR creates orphaned AudioContexts.
+- **Fix**: Close context in component cleanup:
+```js
+useEffect(() => () => { ctx?.close(); ctx = null }, [])
+```
+
+### 17. WasmTerrain — Worker never terminated (`src/components/WasmTerrain.jsx:L12, L81`)
+- **Issue**: `getWorker()` creates a Web Worker that runs forever; component cleanup only nulls `onmessage`.
+- **Fix**: `workerRef.current?.terminate()` in cleanup.
+
+### 18. StatsCounter — No rAF cleanup (`src/components/StatsCounter.jsx:22-27`)
+- **Issue**: `requestAnimationFrame(step)` loop has no cancellation on unmount; continues counting after component is gone.
+- **Fix**: Store rAF handle and cancel in cleanup:
+```js
+const raf = useRef(); raf.current = requestAnimationFrame(step);
+useEffect(() => () => cancelAnimationFrame(raf.current), [])
+```
+
+### 19. SoundEngine — `ctx.resume()` promise not awaited (`src/components/SoundEngine.jsx:L17`)
+- **Issue**: Chrome blocks AudioContext until user gesture; `.resume()` is called but the returned Promise is discarded. Audio may silently fail.
+- **Fix**: `await ctx.resume()` and handle rejection.
 
 ---
 
 ## 🎨 UI/UX & CSS Quirks
 
-### [src/components/ShowcaseWall.jsx:61-74] — Flip card backface is not properly bounded
-- The `.eng-card` parent has `overflow: hidden` (from `index.css:38`). When the card flips to show the backface (containing full description text), `overflow: hidden` clips the content that extends beyond the card bounds. The backface is positioned `absolute; inset: 0` but text can overflow.
-- **Suggested Fix**: Set `overflow: visible` on the card when flipped, or use a fixed height/scroll for the backface pane.
+### 20. Projects — Disabled buttons are invisible (`src/components/Projects.jsx:70-76`)
+- **Issue**: `text-[#1e293b]` on dark `#0a0e17` background makes "source"/"demo" buttons unreadable. Dead UI that occupies space.
+- **Fix**: Either remove the buttons or style with visible disabled colors: `text-[#475569]`.
 
-### [src/components/Toast.jsx] — Toast at `bottom-16 left-3` may overlap with SoundToggle/GlitchToggle on mobile
-- Toast sits at `bottom-16 left-3`, SoundToggle at `bottom-3 right-3`, GlitchToggle at `bottom-3 right-[104px]`. On viewports below 320px, the gap narrows and left/right overlap is possible. Also on landscape mobile, bottom-16 + bottom-3 elements may visually stack.
-- **Suggested Fix**: Make Toast dismissible on click, or move it to the top-right area.
+### 21. ShowcaseWall — Single-flip state prevents independent flipping (`src/components/ShowcaseWall.jsx:52-53`)
+- **Issue**: Only one tech card can be flipped at a time. Clicking card B flips card A back. Users may expect independent flipping.
+- **Fix**: Use `Set<string>` state to track multiple flipped cards.
 
-### [src/index.css:143-146] — Sections start at `opacity: 0` — visible FOIC (Flash of Invisible Content) on slow connections
-- `section[id] { opacity: 0; transform: translateY(20px); }` relies on `SectionReveal` JS to add `.section-revealed`. If React hydration is delayed (slow WASM download, blocked main thread), the user sees a blank page for longer than necessary.
-- **Suggested Fix**: Keep `opacity: 1` as default and use an `animate` class to trigger the fade-in after JS loads, or reduce the initial transform/opacity severity.
+### 22. ShowcaseWall — Hardcoded hover color ignores project color (`src/components/ShowcaseWall.jsx:89`)
+- **Issue**: `group-hover:text-[#3b82f6]` is always blue regardless of project's `p.color`.
+- **Fix**: Use `p.color` for hover text color.
 
-### [src/index.css:114-121] — `.scanlines::after` sits above most content but below overlays
-- Currently `z-index: 50` (after fix). The navbar is `z-50`. The scanline overlay and navbar compete for the same z-index layer. On browsers that don't handle z-index stacking contexts well, the scanlines may obscure navbar text.
-- **Suggested Fix**: Lower scanlines to `z-40` or ensure navbar is in a higher stacking context via `isolation: isolate`.
+### 23. ShutdownScreen — No canvas resize handler (`src/components/ShutdownScreen.jsx:42-43`)
+- **Issue**: Canvas dimensions set once on mount; window resize distorts the matrix rain.
+- **Fix**: Add resize listener to update canvas.width/height.
 
-### [src/components/Navbar.jsx:89-91] — "G" logo link targets `#hero` but hero is not tracked by `IntersectionObserver`
-- The `<a href="#hero">` navigates to the hero section, but the `sectionIds` array (derived from `links`) does not include `'hero'`. The `IntersectionObserver` never observes the hero section, so the nav never displays "active" for the hero/top-of-page state.
-- **Impact**: When scrolled to the top (hero section), no nav link is highlighted. The "active" state is empty/default.
-- **Suggested Fix**: Add `{ label: '_hero', href: '#hero', section: 'hero' }` to the `links` array (and optionally hide it in the desktop nav).
+### 24. ThemeSwitcher — Theme flash on load (`src/components/ThemeSwitcher.jsx:L17`)
+- **Issue**: Theme is read from localStorage but applied on next render via useEffect; default theme flashes briefly.
+- **Fix**: Apply theme synchronously in the initializer:
+```js
+const [theme] = useState(() => { const t = localStorage.getItem('theme') || 'cyber'; applyTheme(t); return t })
+```
 
-### [src/index.css] — `font-family` declared on both `@theme --font-mono` and `body` without using the theme variable on body
-- `--font-mono` is the theme-level variable, but `body` hardcodes `font-family: 'JetBrains Mono', 'Fira Code', monospace`. The theme token isn't used.
-- **Suggested Fix**: Add `font-family: var(--font-mono)` or set it via the `@theme` directive.
-
-### [src/components/Hero.jsx:12] — MatrixRain canvas ignores devicePixelRatio
-- `canvas.width = window.innerWidth` sets canvas size in CSS pixels, not physical pixels. On Retina/HiDPI displays, the canvas renders at lower resolution, appearing blurry.
-- **Suggested Fix**: Multiply by `window.devicePixelRatio`: `canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr; ctx.scale(dpr, dpr)`.
-
-### [src/components/Contact.jsx:16-28] — `SocialIcon` uses a switch with inline SVGs
-- Adding a new social link requires both modifying the `socials` array and adding a `case` to the switch. This is brittle and repetitive.
-- **Suggested Fix**: Either store the SVG path data in the socials array, or use a Map/object lookup, or extract SVGs to separate icon components.
-
-### [src/components/WebGPUDemo.jsx] — WebGPU fallback not user-visible
-- If WebGPU is unavailable (older browsers, unsupported GPUs), the demo silently fails with only a console error (`console.error('WebGPU not available')`). The canvas remains blank with no user-facing message.
-- **Suggested Fix**: Show a fallback message or badge directly in the component UI.
+### 25. index.css — 3-second section visibility delay (`src/index.css:L141-L146`)
+- **Issue**: `section[id] { opacity: 0; animation: sectionFallback 1ms 3s forwards }` — content invisible for 3 seconds if SectionReveal fails.
+- **Fix**: Reduce to 500ms or add `@media (prefers-reduced-motion)` override that shows immediately.
 
 ---
 
 ## 🧹 Refactoring & Clean Code
 
-### [src/components/GlitchText.jsx] — Entire component is dead code (never imported)
-- `src/components/GlitchText.jsx` exports a `GlitchText` component but it is never imported anywhere in the codebase. The `Hero.jsx` component defines its own local `GlitchText` function, which is the one actually used.
-- **Suggested Fix**: Delete `src/components/GlitchText.jsx`.
+### 26. App.jsx — `memo()` wrappers on prop-less components (`src/App.jsx:36-45`)
+- **Issue**: `memo(Hero)`, `memo(About)`, etc. receive zero props; memo adds overhead with zero benefit.
+- **Fix**: Remove `memo` wrappers.
 
-### [src/index.css:109-112] — `.random-glitch` CSS class is never used in any JSX
-- The `random-glitch` class and its `@keyframes randomGlitch` animation are defined but never applied to any element in JSX. Dead code.
-- **Suggested Fix**: Remove the `.random-glitch` class and `@keyframes randomGlitch` block, or add it to a component if the effect is desired.
+### 27. App.jsx — `cancelAnimationFrame(null)` without guard (`src/App.jsx:82`)
+- **Issue**: Before first scroll, `scrollRaf.current` is null; passing null to `cancelAnimationFrame` is safe but noisy in logs.
+- **Fix**: `if (scrollRaf.current) cancelAnimationFrame(scrollRaf.current)`.
 
-### [src/index.css:98] — `.glitch:hover` class is never used in JSX
-- The `glitch` class is defined with `:hover` animation but never applied to any element. Dead code.
-- **Suggested Fix**: Remove or add to intended components.
+### 28. useOnScreen — `mountedRef` never set to false (`src/hooks/useOnScreen.js:6,12`)
+- **Issue**: `mountedRef` initialized to true but never flipped to false. Guard `if (mountedRef.current)` is dead code.
+- **Fix**: Remove `mountedRef` entirely — `observerRef.current.disconnect()` already prevents post-unmount callbacks.
 
-### [src/components/SplashScreen.jsx] — `Clock` component duplicated in Navbar.jsx
-- Both `SplashScreen.jsx:160-165` and `Navbar.jsx:15-27` define their own `Clock` components with identical logic. The SplashScreen version is simpler (no date), but the pattern is duplicated.
-- **Suggested Fix**: Extract to a shared `src/components/Clock.jsx` or inline the simpler version.
+### 29. ClickParticles — Nested rAF per particle (`src/components/ClickParticles.jsx:28`)
+- **Issue**: 8-13 separate `requestAnimationFrame` calls per click. One rAF batching all style mutations would be more efficient.
+- **Fix**: Collect mutations and schedule single rAF.
 
-### [src/lib/shutdown.js:1] — Imports from `../components/SoundEngine` inverts dependency direction
-- `shutdown.js` is in `lib/` but imports from `components/`. Standard convention has `lib/` as a leaf dependency layer with no imports from `components/`. This circular-looking pattern could cause issues with barrel exports or testing.
-- **Suggested Fix**: Move the `disableSound` call to the effect handler in `App.jsx` or extract sound state management into a hook in `hooks/`.
+### 30. Terminal — Tab completion picks first match only (`src/components/Terminal.jsx:200`)
+- **Issue**: `Array.find()` returns first alphabetical match; "p" always completes to "projects" with no cycling UI.
+- **Fix**: Cycle through matches on repeated Tab presses.
 
-### [src/main.jsx:12-18] — Module-level event listeners can accumulate with HMR
-- `document.addEventListener('click', ...)` at module scope. With hot module replacement, each HMR cycle registers a new listener without removing the old one (the module is re-executed but no cleanup code runs). Over 10+ HMR cycles, listeners accumulate and the `scroll`/`click` handlers fire multiple times.
-- **Suggested Fix**: Use a single effect in App that manages the smooth-scroll class, or add `{ once: true }` to the click handler.
+### 31. Terminal — Scroll autoscroll when user is reading (`src/components/Terminal.jsx:L172`)
+- **Issue**: Auto-scroll on every history update, even if user scrolled up to read previous output.
+- **Fix**: Only autoscroll if user is already at bottom.
 
-### [src/components/WasmDemo.jsx:21-27] — `load()` module-level WASM cache races against concurrent calls
-- `let wasm = null` at module scope. If `load()` is called concurrently (e.g., when `run()` and the initial `useEffect` both call `load()`), both see `wasm == null` and both initiate `fetch()`. The second fetch resolves and overwrites the module, but the first fetch's instantiation is wasted.
-- **Suggested Fix**: Use a promise-based cache: `let wasmPromise = null; function load() { if (!wasmPromise) wasmPromise = fetch(...).then(...); return wasmPromise }`.
+### 32. DynamicTitle — Emoji in document title (`src/components/DynamicTitle.jsx:L19`)
+- **Issue**: `💤` emoji may render as tofu box on Linux.
+- **Fix**: Use plain text `[away]` or `idle`.
 
-### [src/components/Terminal.jsx] — `cmdHistory` array grows unbounded
-- Every command entered appends to `cmdHistory` with no limit. A user entering hundreds of commands leaks memory.
-- **Suggested Fix**: Cap history at 100 entries: `setCmdHistory(prev => [...prev.slice(-99), trimmed])`.
+### 33. WasmDemo — Rejected promise cached permanently (`src/components/WasmDemo.jsx:54-62`)
+- **Issue**: `wasmPromise` caches the promise; if WASM loading fails, the rejected promise is cached forever and subsequent `await load()` returns the same rejection.
+- **Fix**: On failure, `wasmPromise = null` to retry.
 
-### [src/components/SoundEngine.jsx:5-8] — Module-level mutable state (`_enabled`, `droneNodes`, etc.) is fragile in concurrent React
-- Module-level variables (`_enabled`, `ctx`, `droneNodes`, `melodyInterval`) are shared across all component instances and don't participate in React's lifecycle. In concurrent mode or with suspense boundaries, these can become stale or out of sync with the actual state.
-- **Suggested Fix**: Use a store (Zustand/context) or at minimum use ref-based singletons with proper cleanup. The `SoundToggle` component's `on` state can also drift from `_enabled` if other code calls `enableSound()`/`disableSound()` directly.
+### 34. ErrorBoundary — Error serialized to string (`src/components/ErrorBoundary.jsx:L9-L11`)
+- **Issue**: `error.toString()` loses stack trace and type info.
+- **Fix**: Store raw `Error` object.
 
-### [src/components/ErrorBoundary.jsx:10-12] — `getDerivedStateFromError` captures only `error.toString()` — stack might be lost
-- `getDerivedStateFromError` receives the error object but only stores `error.toString()` in state. The original error object's stack and additional properties are not preserved. The `componentDidCatch` also logs but doesn't store the full error info.
-- **Suggested Fix**: Store the error object directly and access `.message` and `.stack` in render.
+### 35. Multiple files — Arrays defined as module-level constants but placed inside components
+- **Files**: `KeyboardShortcuts.jsx`, `PingIndicator.jsx`, `LoginScreen.jsx`, `Hero.jsx`
+- **Issue**: Arrays like `shortcuts`, `states`, ASCII art are defined inside the component function, re-created on every render.
+- **Fix**: Move outside component.
 
-### [src/components/SectionReveal.jsx] — No deps on `useEffect` — may miss dynamically added sections
-- The effect runs once on mount, querying all `section[id]` elements at that time. If sections are added dynamically (conditional rendering, lazy loading), they are never observed.
-- **Suggested Fix**: Use a `MutationObserver` on the container element, or re-run the effect when layout changes (difficult without a trigger).
+---
+
+*Audit generated 2026-07-30 — 35 items across 28 source files.*

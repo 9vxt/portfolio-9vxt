@@ -89,7 +89,7 @@ export default function App() {
 
       {booted && (
         <div className="fixed inset-0 z-0 pointer-events-none">
-          <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop="always">
+          <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop="always" dpr={[1, Math.min(window.devicePixelRatio, 2)]} performance={{ min: 0.5 }}>
             <Scene3D scrollP={scrollP} minimal={!loggedIn} />
           </Canvas>
         </div>

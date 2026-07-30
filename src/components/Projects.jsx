@@ -67,13 +67,13 @@ function ProjectCard({ project, index, visible }) {
       </div>
 
       <div className="flex justify-between items-center pt-2 border-t border-[#1e293b]">
-        <button disabled className="text-[10px] font-mono text-[#1e293b] cursor-not-allowed group/link">
-          <span className="text-[#1e293b]">❯</span> source
+        <button disabled className="text-[10px] font-mono text-[#475569] cursor-not-allowed group/link">
+          <span className="text-[#475569]">❯</span> source
         </button>
-        <button disabled className="text-[10px] font-mono text-[#1e293b] cursor-not-allowed group/link">
-          <span className="text-[#1e293b]">❯</span> demo
+        <button disabled className="text-[10px] font-mono text-[#475569] cursor-not-allowed group/link">
+          <span className="text-[#475569]">❯</span> demo
         </button>
-        <span className="text-[9px] font-mono text-[#1e293b]">v2.0.1</span>
+        <span className="text-[9px] font-mono text-[#475569]">v2.0.1</span>
       </div>
     </motion.div>
   )

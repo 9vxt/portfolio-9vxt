@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 const themes = [
   { id: 'cyber', label: 'cyber', icon: '◈', color: '#3b82f6', bg: '#080c14' },
@@ -14,10 +14,11 @@ function applyTheme(id) {
 
 export default function ThemeSwitcher() {
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('theme') || 'cyber' } catch { return 'cyber' }
+    let saved = 'cyber'
+    try { saved = localStorage.getItem('theme') || 'cyber' } catch {}
+    applyTheme(saved)
+    return saved
   })
-
-  useEffect(() => { applyTheme(theme) }, [theme])
 
   const cycle = useCallback(() => {
     setTheme(p => {

@@ -142,7 +142,7 @@ body {
 section[id] {
   opacity: 0;
   transform: translateY(20px);
-  animation: sectionFallback 1ms 3s forwards;
+  animation: sectionFallback 1ms 500ms forwards;
 }
 section[id]:not(.section-revealed):target {
   opacity: 1;

@@ -51,14 +51,20 @@ int factorial(int n) {
 }
 }`
 
-let wasmPromise = null
+let wasmCache = null
+let loadErr = null
 async function load() {
-  if (!wasmPromise) wasmPromise = (async () => {
+  if (wasmCache) return wasmCache
+  if (loadErr) throw loadErr
+  try {
     const res = await fetch('./portfolio.wasm')
     const { instance } = await WebAssembly.instantiate(await res.arrayBuffer(), {})
-    return instance.exports
-  })()
-  return wasmPromise
+    wasmCache = instance.exports
+    return wasmCache
+  } catch (e) {
+    loadErr = e
+    throw e
+  }
 }
 
 function benchJS(type, n) {

@@ -50,14 +50,14 @@ extern "C" {
   float* get_planets_ptr() { return &(sys.getPtr()->px); }
 }`
 
-let wasm = null
+let wasmCache = null
 async function loadWasm() {
-  if (wasm) return wasm
+  if (wasmCache) return wasmCache
   const res = await fetch('./solarsystem.wasm')
   const { instance } = await WebAssembly.instantiate(await res.arrayBuffer(), {})
-  wasm = instance.exports
-  wasm.init_solar()
-  return wasm
+  wasmCache = instance.exports
+  wasmCache.init_solar()
+  return wasmCache
 }
 
 const planetWGSL = `
@@ -257,12 +257,17 @@ async function initSolarGPU(canvas, maxPlanets) {
   let elapsed = 0
   const w = await loadWasm()
 
-  function initTrails() {
+  function copyPlanetData(cnt) {
     const ptr = w.get_planets_ptr()
-    const init = new Float32Array(w.memory.buffer, ptr, w.planet_count() * 12)
+    const bytes = new Uint8Array(w.memory.buffer, ptr, cnt * 12 * 4)
+    return new Float32Array(bytes.slice().buffer)
+  }
+
+  function initTrails() {
+    const src = copyPlanetData(w.planet_count())
     for (let i = 0; i < w.planet_count(); i++) {
       trails[i] = []
-      const px = init[i * 12], py = init[i * 12 + 1]
+      const px = src[i * 12], py = src[i * 12 + 1]
       for (let j = 0; j < TRAIL_LEN; j++) trails[i].push([px, py])
     }
   }
@@ -271,6 +276,7 @@ async function initSolarGPU(canvas, maxPlanets) {
   let last = performance.now()
 
   const frame = () => {
+    try {
     if (!running) return
     const now = performance.now()
     const dt = Math.min((now - last) * 0.001, 0.02)
@@ -280,8 +286,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     w.step_solar(dt)
     const cnt = w.planet_count()
 
-    const ptr = w.get_planets_ptr()
-    const src = new Float32Array(w.memory.buffer, ptr, cnt * 12)
+    const src = copyPlanetData(cnt)
     device.queue.writeBuffer(planetBuf, 0, src)
 
     for (let i = 0; i < cnt; i++) {
@@ -342,6 +347,7 @@ async function initSolarGPU(canvas, maxPlanets) {
     pp.end()
 
     device.queue.submit([enc.finish()])
+    } catch (e) { console.error('WebGPU frame error:', e) }
     requestAnimationFrame(frame)
   }
   requestAnimationFrame(frame)
@@ -403,9 +409,16 @@ export default function WebGPUDemo() {
     let running = true
     const ctx = canvas.getContext('2d')
     let last = performance.now()
+
     const draw = async () => {
+      try {
       if (!running) return
       const w = await loadWasm()
+      const copyPlanetData = (cnt) => {
+        const ptr = w.get_planets_ptr()
+        const bytes = new Uint8Array(w.memory.buffer, ptr, cnt * 12 * 4)
+        return new Float32Array(bytes.slice().buffer)
+      }
       const now = performance.now()
       w.step_solar(Math.min((now - last) * 0.001, 0.02))
       last = now
@@ -413,8 +426,7 @@ export default function WebGPUDemo() {
       ctx.fillStyle = '#080c14'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       const cnt = w.planet_count()
-      const ptr = w.get_planets_ptr()
-      const data = new Float32Array(w.memory.buffer, ptr, cnt * 12)
+      const data = copyPlanetData(cnt)
       const aspect = canvas.width / canvas.height
       const sx = data[0] * canvas.width / 8 + canvas.width / 2
       const sy = data[1] * canvas.height / 8 + canvas.height / 2
@@ -438,6 +450,7 @@ export default function WebGPUDemo() {
           ctx.fill()
         }
       }
+      } catch (e) { console.error('Canvas2D fallback error:', e) }
       requestAnimationFrame(draw)
     }
     if (supported === false) draw()

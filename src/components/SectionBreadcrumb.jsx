@@ -1,28 +1,26 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 const sections = ['hero', 'about', 'skills', 'learning', 'projects', 'showcase', 'wasm', 'gpu', 'contact']
 
 export default function SectionBreadcrumb() {
   const [active, setActive] = useState('hero')
-  const rafRef = useRef(null)
 
   useEffect(() => {
-    const calc = () => {
-      rafRef.current = requestAnimationFrame(() => {
-        let current = 'hero'
-        for (const id of sections) {
-          const el = document.getElementById(id)
-          if (el) {
-            const rect = el.getBoundingClientRect()
-            if (rect.top <= window.innerHeight / 2) current = id
-          }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        let best = { id: null, ratio: 0 }
+        for (const e of entries) {
+          if (e.isIntersecting && e.intersectionRatio > best.ratio) best = { id: e.target.id, ratio: e.intersectionRatio }
         }
-        setActive(current)
-      })
+        if (best.id) setActive(best.id)
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
+    )
+    for (const id of sections) {
+      const el = document.getElementById(id)
+      if (el) obs.observe(el)
     }
-    window.addEventListener('scroll', calc, { passive: true })
-    calc()
-    return () => { window.removeEventListener('scroll', calc); cancelAnimationFrame(rafRef.current) }
+    return () => obs.disconnect()
   }, [])
 
   const scrollTo = (id) => {

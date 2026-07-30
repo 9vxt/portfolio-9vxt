@@ -21,7 +21,8 @@ const projects = [
 
 export default function ShowcaseWall() {
   const [ref, visible] = useOnScreen(0.05)
-  const [flip, setFlip] = useState(null)
+  const [flipped, setFlipped] = useState(new Set())
+  const toggleFlip = (id) => setFlipped(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   return (
     <section id="showcase" className="py-20 bg-[#0a0e17] border-t border-[#1e293b]">
@@ -44,12 +45,12 @@ export default function ShowcaseWall() {
               initial={{ opacity: 0, y: 20 }}
               animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              onClick={() => setFlip(flip === `t${i}` ? null : `t${i}`)}
+              onClick={() => toggleFlip(`t${i}`)}
               className="eng-card p-4 cursor-pointer select-none group"
               style={{ perspective: 600, position: 'relative' }}
             >
               <motion.div
-                animate={{ rotateY: flip === `t${i}` ? 180 : 0 }}
+                animate={{ rotateY: flipped.has(`t${i}`) ? 180 : 0 }}
                 transition={{ duration: 0.4 }}
                 style={{ transformStyle: 'preserve-3d' }}
               >
