@@ -4,6 +4,7 @@ import Terminal from './Terminal'
 
 function MatrixRain() {
   const canvasRef = useRef()
+  const fcRef = useRef(0)
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -17,6 +18,8 @@ function MatrixRain() {
     const cols = Math.floor(window.innerWidth / fontSize)
     const drops = Array.from({ length: cols }, () => Math.random() * window.innerHeight)
     const draw = () => {
+      fcRef.current++
+      if (fcRef.current % 2 !== 0) { id = requestAnimationFrame(draw); return }
       ctx.fillStyle = 'rgba(8, 12, 20, 0.05)'
       ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
       ctx.font = `${fontSize}px monospace`

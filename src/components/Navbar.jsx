@@ -49,18 +49,11 @@ const sectionIds = ['hero', ...links.map(l => l.section)]
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [visible, setVisible] = useState(window.scrollY < 60)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState('')
-  const lastY = useRef(window.scrollY)
 
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      setScrolled(y > 60)
-      setVisible(y < 60 || y < lastY.current)
-      lastY.current = y
-    }
+    const onScroll = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
@@ -87,8 +80,8 @@ export default function Navbar() {
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
-      animate={{ y: visible ? 0 : -80, opacity: visible ? 1 : 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
       className={`fixed top-0 left-0 right-0 z-50 font-mono transition-all duration-300 ${
         scrolled ? 'bg-[#080c14]/90 backdrop-blur-md border-b border-[#1e293b]' : 'bg-transparent'
       }`}

@@ -7,9 +7,13 @@ export default function CursorGlow() {
     const el = glowRef.current
     if (!el) return
     let raf
+    let last = 0
     el.style.left = '-9999px'
     el.style.top = '-9999px'
     const onMove = (e) => {
+      const now = performance.now()
+      if (now - last < 32) return
+      last = now
       raf = requestAnimationFrame(() => {
         el.style.left = e.clientX + 'px'
         el.style.top = e.clientY + 'px'

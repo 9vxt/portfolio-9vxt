@@ -32,6 +32,7 @@ import KeyboardShortcuts from './components/KeyboardShortcuts'
 import SectionBreadcrumb from './components/SectionBreadcrumb'
 import StatsCounter from './components/StatsCounter'
 import SectionCounter from './components/SectionCounter'
+import LoginScreen from './components/LoginScreen'
 
 const MemoHero = memo(Hero)
 const MemoAbout = memo(About)
@@ -46,6 +47,7 @@ const MemoFooter = memo(Footer)
 
 export default function App() {
   const [booted, setBooted] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
   const [shutdown, setShutdown] = useState(false)
   const [closing, setClosing] = useState(false)
   const [glitchOn, setGlitchOn] = useState(true)
@@ -53,6 +55,7 @@ export default function App() {
   const scrollRaf = useRef(null)
 
   const onFinish = useCallback(() => setBooted(true), [])
+  const onLogin = useCallback(() => setLoggedIn(true), [])
   const onClose = useCallback(() => {
     setClosing(false); setShutdown(false)
     try { window.close() } catch {}
@@ -83,47 +86,54 @@ export default function App() {
     <ErrorBoundary>
       {!booted && <SplashScreen onFinish={onFinish} />}
       {shutdown && <ShutdownScreen onClose={onClose} />}
-      <div className={`bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines transition-all duration-[1200ms] ease-in-out ${
-        closing ? 'opacity-0 scale-[0.97] pointer-events-none overflow-hidden' : ''
-      }`}>
+
+      {booted && (
         <div className="fixed inset-0 z-0 pointer-events-none">
-          <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop={booted ? 'always' : 'never'}>
+          <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop="always">
             <Scene3D scrollP={scrollP} />
           </Canvas>
         </div>
+      )}
 
-        <div className="relative z-10">
-          <Navbar />
-          <MemoHero />
-          <MemoAbout />
-          <MemoSkills />
-          <MemoLearning />
-          <MemoProjects />
-          <MemoShowcaseWall />
-          <MemoWasmDemo />
-          <MemoWebGPUDemo />
-          <StatsCounter />
-          <MemoContact />
-          <MemoFooter />
+      {booted && !loggedIn && <LoginScreen onLogin={onLogin} />}
+
+      {loggedIn && (
+        <div className={`bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines transition-all duration-[1200ms] ease-in-out ${
+          closing ? 'opacity-0 scale-[0.97] pointer-events-none overflow-hidden' : ''
+        }`}>
+          <div className="relative z-10">
+            <Navbar />
+            <MemoHero />
+            <MemoAbout />
+            <MemoSkills />
+            <MemoLearning />
+            <MemoProjects />
+            <MemoShowcaseWall />
+            <MemoWasmDemo />
+            <MemoWebGPUDemo />
+            <StatsCounter />
+            <MemoContact />
+            <MemoFooter />
+          </div>
+
+          <FpsMonitor />
+          <ScrollProgress />
+          <CursorGlow />
+          <SoundToggle />
+          <GlobalGlitch enabled={glitchOn} />
+          <ClickParticles />
+          <ScrollToTop />
+          <Toast />
+          <DynamicTitle />
+          <ConsoleArt />
+          <SectionReveal />
+          <ThemeSwitcher />
+          <KeyboardShortcuts />
+          <SectionBreadcrumb />
+          <SectionCounter />
+          <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
         </div>
-
-        <FpsMonitor />
-        <ScrollProgress />
-        <CursorGlow />
-        <SoundToggle />
-        <GlobalGlitch enabled={glitchOn} />
-        <ClickParticles />
-        <ScrollToTop />
-        <Toast />
-        <DynamicTitle />
-        <ConsoleArt />
-        <SectionReveal />
-        <ThemeSwitcher />
-        <KeyboardShortcuts />
-        <SectionBreadcrumb />
-        <SectionCounter />
-        <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
-      </div>
+      )}
     </ErrorBoundary>
   )
 }
