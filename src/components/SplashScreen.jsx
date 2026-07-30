@@ -1,15 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { enableSound, playBoot } from './SoundEngine'
 
-const banner = `______     __      __        __  __                                  __                     
- /      \\   |  \\    |  \\      |  \\|  \\                                |  \\                    
-|  $$$$$$\\ _| $$_   | $$____   \\$$| $$____    ______    ______    ____| $$  ______    ______  
-| $$__| $$|   $$ \\  | $$    \\ |  \\| $$    \\  /      \\  /      \\  /      $$ /      \\  /      \\ 
-| $$    $$ \\$$$$$$  | $$$$$$$\\| $$| $$$$$$$\\|  $$$$$$\\|  $$$$$$\\|  $$$$$$$|  $$$$$$\\|  $$$$$$\\
-| $$$$$$$$  | $$ __ | $$  | $$| $$| $$  | $$| $$  | $$| $$   \\$$| $$  | $$| $$    $$| $$    $$
-| $$  | $$  | $$|  \\| $$  | $$| $$| $$__/ $$| $$__/ $$| $$      | $$__| $$| $$$$$$$$| $$$$$$$$
-| $$  | $$   \\$$  $$| $$  | $$| $$| $$    $$ \\$$    $$| $$       \\$$    $$ \\$$     \\ \\$$     \\
- \\$$   \\$$    \\$$$$  \\$$   \\$$ \\$$ \\$$$$$$$   \\$$$$$$  \\$$        \\$$$$$$$  \\$$$$$$$  \\$$$$$$$`
+const banner = `░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓███████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓██████▓▒░  
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░  ░▒▓█▓▒░   ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ 
+░▒▓█▓▒░       ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓██████▓▒░░▒▓████████▓▒░▒▓█▓▒░░▒▓██████▓▒░ `
 
 const bootLines = [
   { text: 'Initializing portfolio kernel...', delay: 200 },
@@ -51,9 +49,9 @@ export default function SplashScreen({ onFinish }) {
 
   return (
     <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#080c14] transition-opacity duration-600 ${fading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}>
-      <div className="max-w-lg w-full px-6">
-        <pre className="text-[#3b82f6] text-[6px] sm:text-[7px] leading-tight mb-6 whitespace-pre text-center">{banner}</pre>
-        <div className="space-y-1">
+      <div className="w-full px-4">
+        <pre className="text-[#3b82f6] text-[4px] sm:text-[5px] md:text-[6px] leading-tight mb-6 whitespace-pre text-center overflow-x-auto">{banner}</pre>
+        <div className="max-w-lg mx-auto space-y-1">
           {bootLines.map((line, i) => visibleLines.includes(i) ? (
             <p key={i} className="font-mono text-xs">
               <span className="text-[#34d399]">[{(i + 1).toString().padStart(2, '0')}:00]</span>{' '}
