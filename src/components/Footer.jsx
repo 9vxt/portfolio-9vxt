@@ -1,4 +1,12 @@
+import { useState, useEffect } from 'react'
+
 export default function Footer() {
+  const [emoji, setEmoji] = useState('⚡')
+  useEffect(() => {
+    const emojis = ['⚡','🔧','🚀','⚙️','🔬','💻','🧠','🔮','⚛️','🌐','🎯','🔥','💎','🌀']
+    const id = setInterval(() => setEmoji(emojis[Math.floor(Math.random() * emojis.length)]), 4000)
+    return () => clearInterval(id)
+  }, [])
   return (
     <footer className="py-6 bg-[#080c14] border-t border-[#1e293b]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -10,7 +18,7 @@ export default function Footer() {
             <span className="text-[#1e293b]">:</span>
             <span className="text-[#8b5cf6]">~</span>
             <span className="text-[#1e293b]">$</span>{' '}
-            echo &copy;{new Date().getFullYear()}
+            echo &copy;{new Date().getFullYear()} {emoji}
           </p>
           <div className="flex items-center gap-4">
             <p className="text-xs font-mono text-[#475569]">

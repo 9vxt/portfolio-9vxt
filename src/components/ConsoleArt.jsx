@@ -13,7 +13,7 @@ const art = `
   ╚══════════════════════════════════╝
   👋 hey there, thanks for peeking under the hood!
   🔧 built with React + Three.js + WebAudio
-  ⭐ star the repo if you like what you see: https://github.com/9vxt/portfolio
+  ⭐ star the repo if you like what you see: https://github.com/9vxt/portfolio-9vxt
 `
 
 export default function ConsoleArt() {

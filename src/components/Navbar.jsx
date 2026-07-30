@@ -80,7 +80,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <a href="#hero" className="group flex items-center gap-2">
-            <span className="w-6 h-6 rounded border border-[#3b82f6] flex items-center justify-center text-[10px] text-[#3b82f6] font-bold group-hover:bg-[#3b82f6] group-hover:text-[#080c14] transition-all">
+            <span className="w-6 h-6 rounded border border-[#3b82f6] flex items-center justify-center text-[10px] text-[#3b82f6] font-bold group-hover:bg-[#3b82f6] group-hover:text-[#080c14] transition-all nav-logo">
               G
             </span>
             <span className="text-xs text-[#94a3b8] group-hover:text-[#3b82f6] transition-colors hidden sm:inline">
@@ -104,7 +104,7 @@ export default function Navbar() {
 
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex items-center gap-2"><PingIndicator /></div>
-            <div className="hidden lg:block"><StatusTicker /></div>
+            <div className="hidden lg:block w-[180px]"><StatusTicker /></div>
             <div className="hidden sm:block"><Clock /></div>
             <a href="https://github.com/9vxt" target="_blank" rel="noopener noreferrer"
               className="text-[#64748b] hover:text-[#f1f5f9] transition-colors">
