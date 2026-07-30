@@ -1,23 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 
 export default function SectionReveal() {
-  const [active, setActive] = useState('')
-  const rafRef = useRef()
-
   useEffect(() => {
     const sections = document.querySelectorAll('section[id]')
     const observer = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
-            setActive(e.target.id)
             e.target.classList.add('section-revealed')
+            observer.unobserve(e.target)
           }
         }
       },
-      { threshold: 0.25 }
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
     )
-    for (const s of sections) observer.observe(s)
+    for (const s of sections) {
+      if (!s.classList.contains('section-revealed')) observer.observe(s)
+    }
     return () => observer.disconnect()
   }, [])
 
