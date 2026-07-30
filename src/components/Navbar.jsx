@@ -104,7 +104,7 @@ export default function Navbar() {
 
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex items-center gap-2"><PingIndicator /></div>
-            <div className="hidden lg:block"><StatusTicker /></div>
+            <div className="hidden lg:block w-[180px]"><StatusTicker /></div>
             <div className="hidden sm:block"><Clock /></div>
             <a href="https://github.com/9vxt" target="_blank" rel="noopener noreferrer"
               className="text-[#64748b] hover:text-[#f1f5f9] transition-colors">

@@ -18,7 +18,7 @@ import Scene3D from './components/Scene3D'
 import ShowcaseWall from './components/ShowcaseWall'
 import SplashScreen from './components/SplashScreen'
 import ShutdownScreen from './components/ShutdownScreen'
-import GlobalGlitch from './components/GlobalGlitch'
+import GlobalGlitch, { GlitchToggle } from './components/GlobalGlitch'
 import ClickParticles from './components/ClickParticles'
 import ScrollToTop from './components/ScrollToTop'
 import Toast from './components/Toast'
@@ -31,11 +31,16 @@ import { onShutdown } from './lib/shutdown'
 export default function App() {
   const [booted, setBooted] = useState(false)
   const [shutdown, setShutdown] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [glitchOn, setGlitchOn] = useState(true)
   const [scrollP, setScrollP] = useState(0)
   const scrollRaf = useRef(null)
 
   useEffect(() => {
-    onShutdown(() => setShutdown(true))
+    onShutdown(() => {
+      setClosing(true)
+      setTimeout(() => { setClosing(false); setShutdown(true) }, 1200)
+    })
   }, [])
 
   useEffect(() => {
@@ -54,7 +59,9 @@ export default function App() {
     <ErrorBoundary>
       {!booted && <SplashScreen onFinish={() => setBooted(true)} />}
       {shutdown && <ShutdownScreen onClose={() => { window.open('', '_self'); window.close() }} />}
-      <div className="bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines">
+      <div className={`bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines transition-all duration-[1200ms] ease-in-out ${
+        closing ? 'opacity-0 scale-[0.97] pointer-events-none overflow-hidden' : ''
+      }`}>
         <div className="fixed inset-0 z-0 pointer-events-none">
           <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }}>
             <Scene3D scrollP={scrollP} />
@@ -79,13 +86,14 @@ export default function App() {
         <ScrollProgress />
         <CursorGlow />
         <SoundToggle />
-        <GlobalGlitch />
+        <GlobalGlitch enabled={glitchOn} />
         <ClickParticles />
         <ScrollToTop />
         <Toast />
         <DynamicTitle />
         <ConsoleArt />
         <SectionReveal />
+        <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
       </div>
     </ErrorBoundary>
   )

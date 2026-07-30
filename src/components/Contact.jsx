@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 const socials = [
   { label: 'GitHub', user: '@9vxt', href: 'https://github.com/9vxt', icon: 'gh' },
   { label: 'Instagram', user: '@9vxt_fr', href: 'https://www.instagram.com/9vxt_fr/', icon: 'ig' },
-  { label: 'LinkedIn', user: 'Athibordee Thongboonma', href: 'https://www.linkedin.com/in/athibordee-thongboonma-879194426/', icon: 'in' },
+  { label: 'LinkedIn', user: 'Athibordee Thongboonma', href: 'https://www.linkedin.com/in/athibordee-thongboonma', icon: 'in' },
   { label: 'Spotify', user: '9vxt', href: 'https://open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq', icon: 'sp' },
   { label: 'LINE', user: 'qwertyuiop0246', href: 'https://line.me/ti/p/~qwertyuiop0246', icon: 'line' },
 ]

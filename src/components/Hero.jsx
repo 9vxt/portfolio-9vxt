@@ -103,14 +103,15 @@ function AnimatedName() {
   )
 }
 
+const subtitles = [
+  'Embedded Systems Developer',
+  'OS Framework Architect',
+  'Computer Engineering Student',
+  'Low-Level Programmer',
+  'MIT Aspirant',
+]
+
 export default function Hero() {
-  const subtitles = [
-    'Embedded Systems Developer',
-    'OS Framework Architect',
-    'Computer Engineering Student',
-    'Low-Level Programmer',
-    'MIT Aspirant',
-  ]
   const [subIdx, setSubIdx] = useState(0)
   const [subText, setSubText] = useState('')
   const [subCursor, setSubCursor] = useState(true)
@@ -130,7 +131,7 @@ export default function Hero() {
       }
     }, 50)
     return () => clearInterval(id)
-  }, [subIdx, subtitles])
+  }, [subIdx])
 
   return (
     <section id="hero" className="relative min-h-screen w-full overflow-hidden pt-14">
