@@ -111,8 +111,9 @@ export default function WasmDemo() {
         wsR = w[t.wasmFn](t.arg)
         wsT = performance.now() - ws0
       } catch (e) { wsT = 0; wsR = 'ERR'; logLines.push(`  ⚠ WASM error: ${e.message}`); continue }
-      const spd = jsT / wsT
-      res.push({ name: t.name, jsT, wsT, spd, jsR, wsR })
+      const spd = wsT > 0 ? jsT / wsT : 0
+      const safeWsR = typeof wsR === 'number' && isFinite(wsR) ? wsR : 0
+      res.push({ name: t.name, jsT, wsT, spd, jsR, wsR: safeWsR })
       logLines.push(`  JS: ${jsT.toFixed(1)}ms | WASM: ${wsT.toFixed(1)}ms | ${spd.toFixed(1)}x faster`)
     }
     setResults(res)

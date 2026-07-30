@@ -115,7 +115,7 @@ body {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 50;
   pointer-events: none;
   background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
 }
@@ -143,6 +143,18 @@ body {
 section[id] {
   opacity: 0;
   transform: translateY(20px);
+}
+section[id]:not(.section-revealed):target {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section[id] { opacity: 1; transform: translateY(0); }
+  section[id].section-revealed { animation: none; opacity: 1; transform: translateY(0); }
+  .glitch:hover, .glitch-active, .random-glitch, .gg-active { animation: none !important; }
+  .animate-pulse, .pulse-slow, .float-anim, .blink, .rainbow-hover:hover { animation: none !important; }
+  .eng-card::before { animation: none !important; }
 }
 section[id].section-revealed {
   animation: fadeInUp 0.7s ease-out forwards;

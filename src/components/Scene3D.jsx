@@ -1,9 +1,9 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, createContext, useContext } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import WasmTerrain from './WasmTerrain'
 
-const frameObj = { current: 0 }
+const FrameCtx = createContext({ current: 0 })
 
 const vertexShader = `
 uniform float uTime;
@@ -44,6 +44,7 @@ void main() {
 }`
 
 function IcosahedronShader({ scrollP }) {
+  const frameRef = useContext(FrameCtx)
   const meshRef = useRef()
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
@@ -54,7 +55,7 @@ function IcosahedronShader({ scrollP }) {
   }), [])
 
   useFrame((st) => {
-    if (frameObj.current % 2 !== 0) return
+    if (frameRef.current % 2 !== 0) return
     const t = st.clock.elapsedTime
     uniforms.uTime.value = t
     uniforms.uScroll.value += (scrollP - uniforms.uScroll.value) * 0.05
@@ -73,13 +74,14 @@ function IcosahedronShader({ scrollP }) {
       </mesh>
       <mesh scale={1.25}>
         <icosahedronGeometry args={[1, 0]} />
-        <meshBasicMaterial color="#3b82f6" transparent opacity={0.02} />
+        <meshBasicMaterial color="#3b82f6" transparent opacity={0.10} />
       </mesh>
     </group>
   )
 }
 
 function TorusSpiral({ scrollP }) {
+  const frameRef = useContext(FrameCtx)
   const ref = useRef()
   const count = 18
   const geo = useMemo(() => {
@@ -97,7 +99,7 @@ function TorusSpiral({ scrollP }) {
   }, [])
 
   useFrame(() => {
-    if (frameObj.current % 3 !== 0) return
+    if (frameRef.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.x += 0.003 + mx * 0.001 + scrollP * 0.002
@@ -111,10 +113,11 @@ function TorusSpiral({ scrollP }) {
 }
 
 function FloatGeo({ geom, pos, color, speed = 1, mf = 1, wire = true, scrollP = 0 }) {
+  const frameRef = useContext(FrameCtx)
   const ref = useRef()
   const off = useMemo(() => Math.random() * Math.PI * 2, [])
   useFrame((st) => {
-    if (frameObj.current % 2 !== 0 && !wire) return
+    if (frameRef.current % 2 !== 0 && !wire) return
     const t = st.clock.elapsedTime
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
@@ -138,6 +141,7 @@ function FloatGeo({ geom, pos, color, speed = 1, mf = 1, wire = true, scrollP = 
 }
 
 function ShaderParticles({ scrollP }) {
+  const frameRef = useContext(FrameCtx)
   const ref = useRef(); const count = 600
   const data = useMemo(() => {
     const p = new Float32Array(count * 3)
@@ -151,7 +155,7 @@ function ShaderParticles({ scrollP }) {
   }, [])
 
   useFrame(() => {
-    if (frameObj.current % 3 !== 0) return
+    if (frameRef.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.y += 0.001 + mx * 0.0003 + scrollP * 0.001
@@ -167,6 +171,7 @@ function ShaderParticles({ scrollP }) {
 }
 
 function Rings({ scrollP }) {
+  const frameRef = useContext(FrameCtx)
   const gr = useRef()
   const seg = 80
   const data = useMemo(() => [
@@ -179,7 +184,7 @@ function Rings({ scrollP }) {
     return { ...c, pts }
   }), [])
   useFrame(() => {
-    if (frameObj.current % 3 !== 0) return
+    if (frameRef.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!gr.current) return
     gr.current.rotation.x += 0.002 + mx * 0.0008 + scrollP * 0.002
@@ -216,6 +221,7 @@ const SOLID_P = [new THREE.Vector3(1.6, 2.2, -0.8), new THREE.Vector3(-2.4, -0.8
 const SOLID_G = [new THREE.IcosahedronGeometry(0.25), new THREE.OctahedronGeometry(0.2), new THREE.DodecahedronGeometry(0.2)]
 
 function OrbitingShapes() {
+  const frameRef = useContext(FrameCtx)
   const groupRef = useRef()
   const items = useMemo(() => {
     const geoTypes = [
@@ -242,7 +248,7 @@ function OrbitingShapes() {
     return arr
   }, [])
   useFrame((st) => {
-    if (frameObj.current % 2 !== 0) return
+    if (frameRef.current % 2 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!groupRef.current) return
     groupRef.current.children.forEach((child, i) => {
@@ -268,6 +274,7 @@ function OrbitingShapes() {
 }
 
 function HelixTube() {
+  const frameRef = useContext(FrameCtx)
   const ref = useRef()
   const count = 160
   const positions = useMemo(() => {
@@ -287,7 +294,7 @@ function HelixTube() {
     return g
   }, [])
   useFrame(() => {
-    if (frameObj.current % 2 !== 0) return
+    if (frameRef.current % 2 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.x = my * 0.3
@@ -302,6 +309,7 @@ function HelixTube() {
 }
 
 function InteractiveStars() {
+  const frameRef = useContext(FrameCtx)
   const ref = useRef()
   const count = 120
   const data = useMemo(() => {
@@ -320,7 +328,7 @@ function InteractiveStars() {
     return g
   }, [])
   useFrame(() => {
-    if (frameObj.current % 3 !== 0) return
+    if (frameRef.current % 3 !== 0) return
     const mx = window._mouseX || 0; const my = window._mouseY || 0
     if (!ref.current) return
     ref.current.rotation.y = mx * 0.4
@@ -337,6 +345,8 @@ function InteractiveStars() {
 
 
 export default function Scene3D({ scrollP = 0 }) {
+  const frameRef = useRef(0)
+
   useEffect(() => {
     window._mouseX = 0; window._mouseY = 0
     let raf
@@ -345,10 +355,10 @@ export default function Scene3D({ scrollP = 0 }) {
     return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf) }
   }, [])
 
-  useFrame(() => { frameObj.current++ })
+  useFrame(() => { frameRef.current++ })
 
   return (
-    <>
+    <FrameCtx.Provider value={frameRef}>
       <ambientLight intensity={0.12} />
       <directionalLight position={[5, 5, 5]} intensity={0.3} />
       <directionalLight position={[-5, -5, -5]} intensity={0.15} color="#3b82f6" />
@@ -362,6 +372,6 @@ export default function Scene3D({ scrollP = 0 }) {
       <WasmTerrain scrollP={scrollP} />
       {GEOMS.map((g, i) => (<FloatGeo key={i} geom={g} pos={POS[i]} color={COLORS[i % COLORS.length]} speed={0.7 + i * 0.1} mf={0.4 + i * 0.07} scrollP={scrollP} />))}
       {SOLID_G.map((g, i) => (<FloatGeo key={`s${i}`} geom={g} pos={SOLID_P[i]} color={COLORS[i + 1]} speed={0.5 + i * 0.1} mf={0.3} wire={false} scrollP={scrollP} />))}
-    </>
+    </FrameCtx.Provider>
   )
 }

@@ -34,7 +34,7 @@ function startDrone() {
   const lfo = c.createOscillator()
   lfo.frequency.value = 0.06
   const lfoG = c.createGain()
-  lfoG.gain.value = 2
+  lfoG.gain.value = 0.04
   lfo.connect(lfoG); lfoG.connect(droneNodes[0].gain.gain); lfo.start()
   droneNodes.push({ osc: lfo, gain: lfoG })
 }
@@ -117,7 +117,7 @@ export function playBoot() {
     const c = getCtx()
     const g = c.createGain()
     g.gain.value = 0.08
-    g.connect(c.destination)
+    g.connect(masterGain)
 
     const now = c.currentTime
 
@@ -150,11 +150,12 @@ export function playBoot() {
 }
 
 export function playShutdown() {
+  if (!_enabled) return
   try {
     const c = getCtx()
     const g = c.createGain()
     g.gain.value = 0.25
-    g.connect(c.destination)
+    g.connect(masterGain)
 
     const now = c.currentTime
     const notes = [659, 523, 392, 330, 262, 196, 165]
@@ -176,10 +177,6 @@ export function playShutdown() {
   } catch {}
 }
 
-export function playClick() {
-  playBlip(1200, 0.04, 0.015)
-}
-
 export default function SoundToggle() {
   const [on, setOn] = useState(_enabled)
 
@@ -196,7 +193,7 @@ export default function SoundToggle() {
 
   return (
     <button onClick={toggle}
-      className="fixed bottom-3 left-3 z-[999] flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono transition-all"
+      className="fixed bottom-3 right-3 z-[999] flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono transition-all"
       style={{ background: 'rgba(8,12,20,0.85)', border: '1px solid rgba(30,41,59,0.8)', backdropFilter: 'blur(4px)', color: on ? '#34d399' : '#475569' }}>
       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         {on ? (

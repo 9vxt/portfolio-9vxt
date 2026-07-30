@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
@@ -11,6 +11,7 @@ import WasmDemo from './components/WasmDemo'
 import WebGPUDemo from './components/WebGPUDemo'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
+import { memo } from 'react'
 import FpsMonitor from './components/FpsMonitor'
 import ScrollProgress from './components/ScrollProgress'
 import CursorGlow from './components/CursorGlow'
@@ -26,6 +27,17 @@ import DynamicTitle from './components/DynamicTitle'
 import ConsoleArt from './components/ConsoleArt'
 import SectionReveal from './components/SectionReveal'
 import SoundToggle from './components/SoundEngine'
+
+const MemoHero = memo(Hero)
+const MemoAbout = memo(About)
+const MemoSkills = memo(Skills)
+const MemoLearning = memo(Learning)
+const MemoProjects = memo(Projects)
+const MemoShowcaseWall = memo(ShowcaseWall)
+const MemoWasmDemo = memo(WasmDemo)
+const MemoWebGPUDemo = memo(WebGPUDemo)
+const MemoContact = memo(Contact)
+const MemoFooter = memo(Footer)
 import { onShutdown } from './lib/shutdown'
 
 export default function App() {
@@ -35,6 +47,9 @@ export default function App() {
   const [glitchOn, setGlitchOn] = useState(true)
   const [scrollP, setScrollP] = useState(0)
   const scrollRaf = useRef(null)
+
+  const onFinish = useCallback(() => setBooted(true), [])
+  const onClose = useCallback(() => { setClosing(false); setShutdown(false); setBooted(false) }, [])
 
   useEffect(() => {
     let shutdownTimer
@@ -59,29 +74,29 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      {!booted && <SplashScreen onFinish={() => setBooted(true)} />}
-      {shutdown && <ShutdownScreen onClose={() => { setClosing(false); setShutdown(false); setBooted(false) }} />}
+      {!booted && <SplashScreen onFinish={onFinish} />}
+      {shutdown && <ShutdownScreen onClose={onClose} />}
       <div className={`bg-[#080c14] text-[#f1f5f9] min-h-screen scanlines transition-all duration-[1200ms] ease-in-out ${
         closing ? 'opacity-0 scale-[0.97] pointer-events-none overflow-hidden' : ''
       }`}>
         <div className="fixed inset-0 z-0 pointer-events-none">
-          <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }}>
+          <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop={booted ? 'always' : 'never'}>
             <Scene3D scrollP={scrollP} />
           </Canvas>
         </div>
 
         <div className="relative z-10">
           <Navbar />
-          <Hero />
-          <About />
-          <Skills />
-          <Learning />
-          <Projects />
-          <ShowcaseWall />
-          <WasmDemo />
-          <WebGPUDemo />
-          <Contact />
-          <Footer />
+          <MemoHero />
+          <MemoAbout />
+          <MemoSkills />
+          <MemoLearning />
+          <MemoProjects />
+          <MemoShowcaseWall />
+          <MemoWasmDemo />
+          <MemoWebGPUDemo />
+          <MemoContact />
+          <MemoFooter />
         </div>
 
         <FpsMonitor />

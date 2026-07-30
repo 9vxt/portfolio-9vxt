@@ -38,7 +38,6 @@ function ParticleBg() {
       h = c.height = window.innerHeight
     }
     resize()
-    window.addEventListener('resize', resize)
 
     particles = Array.from({ length: 55 }, () => ({
       x: rand(0, w), y: rand(0, h),
@@ -121,14 +120,13 @@ export default function SplashScreen({ onFinish }) {
   const [done, setDone] = useState(false)
   const [fading, setFading] = useState(false)
   const [cursor, setCursor] = useState(true)
-  const started = useRef(false)
 
   useEffect(() => {
-    if (started.current) return
-    started.current = true
+    let cancelled = false
     let i = 0
     let bootTimer
     const next = () => {
+      if (cancelled) return
       if (i >= bootMessages.length) { setDone(true); return }
       setLineIdx(i)
       setProgress(Math.round(((i + 1) / bootMessages.length) * 100))
@@ -136,14 +134,15 @@ export default function SplashScreen({ onFinish }) {
       bootTimer = setTimeout(next, 140 + Math.random() * 220)
     }
     next()
-    return () => clearTimeout(bootTimer)
+    return () => { cancelled = true; clearTimeout(bootTimer) }
   }, [])
 
   const handleEnter = useCallback(() => {
     enableSound()
     playBoot()
     setFading(true)
-    setTimeout(onFinish, 700)
+    const t = setTimeout(onFinish, 700)
+    return () => clearTimeout(t)
   }, [onFinish])
 
   useEffect(() => {
@@ -185,13 +184,13 @@ export default function SplashScreen({ onFinish }) {
         </div>
 
         {/* banner */}
-        <pre className="text-[#3b82f6] text-[3px] sm:text-[4.5px] md:text-[5.5px] leading-tight mb-6 whitespace-pre text-center select-none">{banner}</pre>
+        <pre className="text-[#3b82f6] text-[6px] sm:text-[7px] md:text-[8px] leading-tight mb-6 whitespace-pre text-center select-none">{banner}</pre>
 
         {/* boot log */}
         <div className="space-y-[1px] mb-4">
           {bootMessages.map((msg, i) => (
-            <p key={i} className={`font-mono text-[11px] sm:text-xs transition-all duration-300 ${
-              i < lineIdx ? 'opacity-100' : i === lineIdx ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'
+            <p key={i} className={`font-mono text-[11px] sm:text-xs transition-opacity duration-300 ${
+              i < lineIdx ? 'opacity-100' : i === lineIdx ? 'opacity-100' : 'opacity-0'
             }`}>
               <span className="text-[#34d399]">[{String(i + 1).padStart(2, '0')}:00]</span>{' '}
               {i < lineIdx ? (

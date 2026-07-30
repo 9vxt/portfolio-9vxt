@@ -53,20 +53,26 @@ export default function Navbar() {
   const [active, setActive] = useState('')
 
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 60)
-      const mid = window.scrollY + window.innerHeight / 2
-      for (const id of sectionIds) {
-        const el = document.getElementById(id)
-        if (el) {
-          const top = el.offsetTop; const bot = top + el.offsetHeight
-          if (mid >= top && mid < bot) { setActive(id); return }
-        }
-      }
-    }
+    const onScroll = () => setScrolled(window.scrollY > 60)
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setActive(e.target.id)
+        }
+      },
+      { threshold: 0, rootMargin: '-40% 0px -55% 0px' }
+    )
+    for (const id of sectionIds) {
+      const el = document.getElementById(id)
+      if (el) obs.observe(el)
+    }
+    return () => obs.disconnect()
   }, [])
 
   return (
@@ -133,7 +139,7 @@ export default function Navbar() {
             <div className="px-4 pb-3 space-y-1">
               {links.map((l) => (
                 <a key={l.href} href={l.href} onClick={() => setOpen(false)}
-                  className={`block py-1.5 text-xs transition-colors ${active === l.section ? 'text-[#3b82f6]' : 'text-[#64748b] hover:text-[#3b82f6]'}`}>
+                  className={`block py-1.5 px-2 rounded text-xs transition-colors ${active === l.section ? 'text-[#3b82f6] bg-[#1e293b]/70' : 'text-[#64748b] hover:text-[#3b82f6] hover:bg-[#1e293b]/50'}`}>
                   {l.label}
                 </a>
               ))}

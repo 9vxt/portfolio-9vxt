@@ -4,15 +4,14 @@ import * as THREE from 'three'
 
 const W = 80; const H = 60
 
-let _worker = null
-function getWorker() {
-  if (!_worker) _worker = new Worker('/terrain.worker.js')
-  return _worker
-}
-
 export default function WasmTerrain({ scrollP = 0 }) {
   const meshRef = useRef()
   const wireRef = useRef()
+  const workerRef = useRef()
+  const getWorker = () => {
+    if (!workerRef.current) workerRef.current = new Worker('/terrain.worker.js')
+    return workerRef.current
+  }
   const [ready, setReady] = useState(false)
   const frameCountRef = useRef(0)
   const rotRef = useRef(0)

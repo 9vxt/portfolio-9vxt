@@ -36,18 +36,24 @@ function MatrixRain() {
     window.addEventListener('resize', onResize)
     return () => { cancelAnimationFrame(id); window.removeEventListener('resize', onResize) }
   }, [])
-  return <canvas ref={canvasRef} className="absolute inset-0 opacity-10 pointer-events-none" />
+  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 pointer-events-none" />
 }
 
 function GlitchText({ children }) {
   const [glitching, setGlitching] = useState(false)
   const offTimerRef = useRef()
+  const scheduleRef = useRef()
   useEffect(() => {
-    const id = setInterval(() => {
-      setGlitching(true)
-      offTimerRef.current = setTimeout(() => setGlitching(false), 200)
-    }, 3000 + Math.random() * 2000)
-    return () => { clearInterval(id); clearTimeout(offTimerRef.current) }
+    const schedule = () => {
+      scheduleRef.current = setTimeout(() => {
+        if (offTimerRef.current) clearTimeout(offTimerRef.current)
+        setGlitching(true)
+        offTimerRef.current = setTimeout(() => setGlitching(false), 200)
+        schedule()
+      }, 3000 + Math.random() * 2000)
+    }
+    schedule()
+    return () => { clearTimeout(scheduleRef.current); clearTimeout(offTimerRef.current) }
   }, [])
   return (
     <span className={`relative inline-block transition-none ${glitching ? 'glitch-active' : ''}`}>
