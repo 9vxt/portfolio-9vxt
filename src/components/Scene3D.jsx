@@ -342,7 +342,7 @@ function InteractiveStars() {
 }
 
 
-export default function Scene3D({ scrollP = 0 }) {
+export default function Scene3D({ scrollP = 0, minimal = false }) {
   const frameRef = useRef(0)
 
   const rafRef = useRef()
@@ -364,16 +364,22 @@ export default function Scene3D({ scrollP = 0 }) {
       <ambientLight intensity={0.12} />
       <directionalLight position={[5, 5, 5]} intensity={0.3} />
       <directionalLight position={[-5, -5, -5]} intensity={0.15} color="#3b82f6" />
-      <ShaderParticles scrollP={scrollP} />
-      <IcosahedronShader scrollP={scrollP} />
-      <Rings scrollP={scrollP} />
-      <TorusSpiral scrollP={scrollP} />
-      <HelixTube />
-      <OrbitingShapes />
-      <InteractiveStars />
-      <WasmTerrain scrollP={scrollP} />
-      {GEOMS.map((g, i) => (<FloatGeo key={i} geom={g} pos={POS[i]} color={COLORS[i % COLORS.length]} speed={0.7 + i * 0.1} mf={0.4 + i * 0.07} scrollP={scrollP} />))}
-      {SOLID_G.map((g, i) => (<FloatGeo key={`s${i}`} geom={g} pos={SOLID_P[i]} color={COLORS[i + 1]} speed={0.5 + i * 0.1} mf={0.3} wire={false} scrollP={scrollP} />))}
+      {minimal ? (
+        <WasmTerrain scrollP={scrollP} />
+      ) : (
+        <>
+          <ShaderParticles scrollP={scrollP} />
+          <IcosahedronShader scrollP={scrollP} />
+          <Rings scrollP={scrollP} />
+          <TorusSpiral scrollP={scrollP} />
+          <HelixTube />
+          <OrbitingShapes />
+          <InteractiveStars />
+          <WasmTerrain scrollP={scrollP} />
+          {GEOMS.map((g, i) => (<FloatGeo key={i} geom={g} pos={POS[i]} color={COLORS[i % COLORS.length]} speed={0.7 + i * 0.1} mf={0.4 + i * 0.07} scrollP={scrollP} />))}
+          {SOLID_G.map((g, i) => (<FloatGeo key={`s${i}`} geom={g} pos={SOLID_P[i]} color={COLORS[i + 1]} speed={0.5 + i * 0.1} mf={0.3} wire={false} scrollP={scrollP} />))}
+        </>
+      )}
     </FrameCtx.Provider>
   )
 }

@@ -1,23 +1,16 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function LoginScreen({ onLogin }) {
-  const [text, setText] = useState('')
+  const [passLen, setPassLen] = useState(0)
   const [cursor, setCursor] = useState(true)
   const [ready, setReady] = useState(false)
-  const idxRef = useRef(0)
-  const line = ' athibordee@9vxt-portfolio'
 
   useEffect(() => {
     const cursorId = setInterval(() => setCursor(p => !p), 530)
-    const typeId = setInterval(() => {
-      idxRef.current++
-      setText(line.slice(0, idxRef.current))
-      if (idxRef.current >= line.length) {
-        clearInterval(typeId)
-        setReady(true)
-      }
-    }, 60)
-    return () => { clearInterval(cursorId); clearInterval(typeId) }
+    const passId = setInterval(() => {
+      setPassLen(p => { const n = p + 1; if (n >= 8) { clearInterval(passId); setTimeout(() => setReady(true), 300); return 8 }; return n })
+    }, 120)
+    return () => { clearInterval(cursorId); clearInterval(passId) }
   }, [])
 
   useEffect(() => {
@@ -28,7 +21,7 @@ export default function LoginScreen({ onLogin }) {
   }, [ready, onLogin])
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-[#080c14]/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-[#080c14]">
       <div className="relative z-10 text-center">
         <div className="mb-6">
           <pre className="text-[#3b82f6] text-[8px] sm:text-[10px] leading-tight font-mono whitespace-pre">
@@ -46,15 +39,13 @@ export default function LoginScreen({ onLogin }) {
           <div className="font-mono text-left">
             <p className="text-[#94a3b8] text-xs mb-2">archlinux login:</p>
             <p className="text-[#f1f5f9] text-sm">
-              <span className="text-[#34d399]">$</span> login{text}
-              <span className={`text-[#22d3ee] ${cursor ? 'opacity-100' : 'opacity-0'}`}>▊</span>
+              <span className="text-[#34d399]">$</span> 9vxt
             </p>
-            {ready && (
-              <p className="text-[#64748b] text-[10px] mt-3 animate-fadeIn">
-                <span className="text-[#475569]">password: </span>
-                <span className="text-[#22d3ee]">········</span>
-              </p>
-            )}
+            <p className="text-[#64748b] text-xs mt-2">
+              <span className="text-[#475569]">password:{' '}</span>
+              <span className="text-[#22d3ee]">{'•'.repeat(passLen)}</span>
+              {passLen < 8 && <span className={`text-[#22d3ee] ${cursor ? 'opacity-100' : 'opacity-0'}`}>▊</span>}
+            </p>
           </div>
         </div>
         {ready && (

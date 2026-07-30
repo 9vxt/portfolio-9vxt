@@ -2,53 +2,6 @@ import { useRef, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Terminal from './Terminal'
 
-function MatrixRain() {
-  const canvasRef = useRef()
-  useEffect(() => {
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    let id
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = window.innerWidth * dpr
-    canvas.height = window.innerHeight * dpr
-    ctx.scale(dpr, dpr)
-    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン01'
-    const fontSize = 10
-    const cols = Math.floor(window.innerWidth / fontSize)
-    const drops = Array.from({ length: cols }, () => Math.random() * window.innerHeight)
-    const draw = () => {
-      ctx.fillStyle = 'rgba(8, 12, 20, 0.05)'
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
-      ctx.font = `${fontSize}px monospace`
-      for (let i = 0; i < drops.length; i++) {
-        if (i % 3 !== 0) continue
-        if (drops[i] - 10 > window.innerHeight / fontSize && Math.random() > 0.98) { drops[i] = 0; continue }
-        const char = chars[Math.floor(Math.random() * chars.length)]
-        ctx.fillStyle = Math.random() > 0.97 ? '#f1f5f9' : '#3b82f6'
-        ctx.globalAlpha = 0.2
-        ctx.fillText(char, i * fontSize, drops[i] * fontSize)
-        ctx.globalAlpha = 1
-        if (drops[i] * fontSize > window.innerHeight && Math.random() > 0.975) drops[i] = 0
-        drops[i]++
-      }
-      id = requestAnimationFrame(draw)
-    }
-    draw()
-    let resizeTimer
-    const onResize = () => {
-      clearTimeout(resizeTimer)
-      resizeTimer = setTimeout(() => {
-        canvas.width = window.innerWidth * dpr
-        canvas.height = window.innerHeight * dpr
-        ctx.scale(dpr, dpr)
-      }, 200)
-    }
-    window.addEventListener('resize', onResize)
-    return () => { cancelAnimationFrame(id); clearTimeout(resizeTimer); window.removeEventListener('resize', onResize) }
-  }, [])
-  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 pointer-events-none" />
-}
-
 function GlitchText({ children }) {
   const [glitching, setGlitching] = useState(false)
   const offTimerRef = useRef()
@@ -160,7 +113,6 @@ export default function Hero() {
   return (
     <section id="hero" className="relative min-h-screen w-full overflow-hidden pt-14">
       <div className="absolute inset-0 bg-gradient-to-b from-[#3b82f6]/5 via-transparent to-[#080c14]/90 pointer-events-none z-[1]" />
-      <MatrixRain />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
         <motion.div
