@@ -4,7 +4,7 @@ import * as THREE from 'three'
 
 const W = 80; const H = 60
 
-export default function WasmTerrain({ scrollP = 0 }) {
+export default function WasmTerrain({ scrollP = 0, isMobile = false }) {
   const meshRef = useRef()
   const wireRef = useRef()
   const workerRef = useRef()
@@ -19,6 +19,8 @@ export default function WasmTerrain({ scrollP = 0 }) {
   const pendingIdRef = useRef(-1)
   const cacheRef = useRef(new Float32Array(W * H))
 
+  const updateInterval = isMobile ? 8 : 4
+
   const geo = useMemo(() => {
     const g = new THREE.PlaneGeometry(20, 14, W - 1, H - 1)
     g.rotateX(-Math.PI / 2)
@@ -31,10 +33,11 @@ export default function WasmTerrain({ scrollP = 0 }) {
   }, [])
 
   const wireGeo = useMemo(() => {
+    if (isMobile) return null
     const g = new THREE.PlaneGeometry(20, 14, W - 1, H - 1)
     g.rotateX(-Math.PI / 2)
     return g
-  }, [])
+  }, [isMobile])
 
   function updateColors(pos, colors) {
     const arr = colors.array
@@ -84,26 +87,33 @@ export default function WasmTerrain({ scrollP = 0 }) {
   useFrame((state) => {
     const fc = frameCountRef.current++
 
-    if (fc % 4 === 0) {
+    if (fc % updateInterval === 0) {
       const t = state.clock.elapsedTime * 0.25
       const id = ++reqIdRef.current; pendingIdRef.current = id
       try { getWorker().postMessage({ id, w: W, h: H, t, s: 4.0 }) } catch {}
     }
 
-    if (fc % 4 === 0 && ready) {
+    if (fc % updateInterval === 0 && ready) {
       const pos = geo.attributes.position
-      const colors = geo.attributes.color
-      const wpos = wireGeo.attributes.position
       const cache = cacheRef.current
       for (let i = 0; i < pos.count; i++) {
         const x = i % W; const y = Math.floor(i / W)
         const h = cache[y * W + x] * 1.4
         pos.setY(i, h)
-        wpos.setY(i, h)
       }
-      pos.needsUpdate = true; wpos.needsUpdate = true
-      geo.computeVertexNormals()
-      updateColors(pos, colors)
+      pos.needsUpdate = true
+      if (wireGeo) {
+        const wpos = wireGeo.attributes.position
+        for (let i = 0; i < pos.count; i++) {
+          wpos.setY(i, pos.getY(i))
+        }
+        wpos.needsUpdate = true
+      }
+      if (!isMobile) {
+        geo.computeVertexNormals()
+        const colors = geo.attributes.color
+        updateColors(pos, colors)
+      }
     }
 
     rotRef.current += 0.002 + scrollP * 0.003
@@ -126,9 +136,9 @@ export default function WasmTerrain({ scrollP = 0 }) {
       <mesh ref={meshRef} geometry={geo}>
         <meshPhysicalMaterial vertexColors metalness={0.05} roughness={0.85} flatShading side={THREE.DoubleSide} />
       </mesh>
-      <mesh ref={wireRef} geometry={wireGeo}>
+      {wireGeo && <mesh ref={wireRef} geometry={wireGeo}>
         <meshBasicMaterial color="#22d3ee" wireframe transparent opacity={0.06} />
-      </mesh>
+      </mesh>}
     </group>
   )
 }

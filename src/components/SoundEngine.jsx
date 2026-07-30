@@ -182,7 +182,16 @@ export default function SoundToggle() {
   const [on, setOn] = useState(_enabled)
 
   useEffect(() => {
+    const handleVis = () => {
+      if (document.hidden) {
+        if (ctx && ctx.state === 'running') ctx.suspend()
+      } else {
+        if (ctx && ctx.state === 'suspended') ctx.resume()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVis)
     return () => {
+      document.removeEventListener('visibilitychange', handleVis)
       disableSound()
     }
   }, [])

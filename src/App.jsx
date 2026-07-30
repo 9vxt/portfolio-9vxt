@@ -33,6 +33,7 @@ import SectionBreadcrumb from './components/SectionBreadcrumb'
 import StatsCounter from './components/StatsCounter'
 import SectionCounter from './components/SectionCounter'
 import LoginScreen from './components/LoginScreen'
+import useIsMobile from './hooks/useIsMobile'
 
 const MemoHero = memo(Hero)
 const MemoAbout = memo(About)
@@ -53,6 +54,7 @@ export default function App() {
   const [glitchOn, setGlitchOn] = useState(true)
   const [scrollP, setScrollP] = useState(0)
   const scrollRaf = useRef(null)
+  const isMobile = useIsMobile()
 
   const onFinish = useCallback(() => setBooted(true), [])
   const onLogin = useCallback(() => setLoggedIn(true), [])
@@ -90,7 +92,7 @@ export default function App() {
       {booted && (
         <div className="fixed inset-0 z-0 pointer-events-none">
           <Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} frameloop="always" dpr={[1, Math.min(window.devicePixelRatio, 2)]} performance={{ min: 0.5 }}>
-            <Scene3D scrollP={scrollP} minimal={!loggedIn} />
+            <Scene3D scrollP={scrollP} minimal={!loggedIn} isMobile={isMobile} />
           </Canvas>
         </div>
       )}
@@ -116,22 +118,22 @@ export default function App() {
             <MemoFooter />
           </div>
 
-          <FpsMonitor />
+          {!isMobile && <FpsMonitor />}
           <ScrollProgress />
-          <CursorGlow />
+          {!isMobile && <CursorGlow />}
           <SoundToggle />
-          <GlobalGlitch enabled={glitchOn} />
-          <ClickParticles />
+          {!isMobile && <GlobalGlitch enabled={glitchOn} />}
+          {!isMobile && <ClickParticles />}
           <ScrollToTop />
           <Toast />
           <DynamicTitle />
           <ConsoleArt />
           <SectionReveal />
           <ThemeSwitcher />
-          <KeyboardShortcuts />
+          {!isMobile && <KeyboardShortcuts />}
           <SectionBreadcrumb />
           <SectionCounter />
-          <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />
+          {!isMobile && <GlitchToggle enabled={glitchOn} onToggle={() => setGlitchOn(p => !p)} />}
         </div>
       )}
     </ErrorBoundary>

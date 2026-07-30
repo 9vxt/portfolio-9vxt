@@ -379,7 +379,7 @@ export default function WebGPUDemo() {
     const c = canvasRef.current
     if (!c) return
     const rect = c.getBoundingClientRect()
-    const dpr = window.devicePixelRatio || 1
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
     c.width = Math.round(rect.width * dpr)
     c.height = Math.round(rect.height * dpr)
   }, [])

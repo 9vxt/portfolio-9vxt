@@ -144,10 +144,9 @@ function FloatGeo({ geom, pos, color, speed = 1, mf = 1, wire = true, scrollP = 
   )
 }
 
-function ShaderParticles({ scrollP }) {
+function ShaderParticles({ scrollP, count = 600 }) {
   const ref = useRef()
   const { geo, mat } = useMemo(() => {
-    const count = 600
     const p = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
       const r = 2.5 + Math.random() * 5; const th = Math.random() * Math.PI * 2; const ph = Math.acos(2 * Math.random() - 1)
@@ -156,7 +155,7 @@ function ShaderParticles({ scrollP }) {
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(p, 3))
     return { geo: g, mat: new THREE.PointsMaterial({ size: 0.02, color: '#3b82f6', transparent: true, opacity: 0.2, sizeAttenuation: true, blending: THREE.AdditiveBlending }) }
-  }, [])
+  }, [count])
 
   useEffect(() => () => { geo.dispose(); mat.dispose() }, [geo, mat])
 
@@ -179,7 +178,6 @@ function Rings({ scrollP }) {
       { r: 2.0, rx: Math.PI / 3.5, ry: Math.PI / 5, c: '#22d3ee', o: 0.08 },
       { r: 2.4, rx: Math.PI / 2.2, ry: Math.PI / 3, c: '#8b5cf6', o: 0.06 },
     ]
-    const mats = []
     return {
       items: raw.map(c => {
         const pts = new Float32Array((seg + 1) * 3)
@@ -187,10 +185,8 @@ function Rings({ scrollP }) {
         const g = new THREE.BufferGeometry()
         g.setAttribute('position', new THREE.BufferAttribute(pts, 3))
         const m = new THREE.LineBasicMaterial({ color: c.c, transparent: true, opacity: c.o })
-        mats.push(m)
         return { ...c, geo: g, mat: m, rx: c.rx, ry: c.ry }
       }),
-      materials: mats,
     }
   }, [seg])
 
@@ -326,7 +322,7 @@ function InteractiveStars() {
   return <points ref={ref} geometry={geo} material={mat} />
 }
 
-export default function Scene3D({ scrollP = 0, minimal = false }) {
+export default function Scene3D({ scrollP = 0, minimal = false, isMobile = false }) {
   useEffect(() => {
     const onMove = (e) => {
       mouseRef.x = (e.clientX / window.innerWidth) * 2 - 1
@@ -364,19 +360,19 @@ export default function Scene3D({ scrollP = 0, minimal = false }) {
       <directionalLight position={[5, 5, 5]} intensity={0.3} />
       <directionalLight position={[-5, -5, -5]} intensity={0.15} color="#3b82f6" />
       {minimal ? (
-        <WasmTerrain scrollP={scrollP} />
+        <WasmTerrain scrollP={scrollP} isMobile={isMobile} />
       ) : (
         <>
-          <ShaderParticles scrollP={scrollP} />
+          <ShaderParticles scrollP={scrollP} count={isMobile ? 150 : 600} />
           <IcosahedronShader scrollP={scrollP} />
           <Rings scrollP={scrollP} />
           <TorusSpiral scrollP={scrollP} />
-          <HelixTube />
-          <OrbitingShapes />
-          <InteractiveStars />
-          <WasmTerrain scrollP={scrollP} />
-          {floatItems.geoms.map((g, i) => (<FloatGeo key={i} geom={g} pos={floatItems.pos[i]} color={COLORS[i % COLORS.length]} speed={0.7 + i * 0.1} mf={0.4 + i * 0.07} scrollP={scrollP} />))}
-          {floatItems.solidGeoms.map((g, i) => (<FloatGeo key={`s${i}`} geom={g} pos={floatItems.solidPos[i]} color={COLORS[i + 1]} speed={0.5 + i * 0.1} mf={0.3} wire={false} scrollP={scrollP} />))}
+          {!isMobile && <HelixTube />}
+          {!isMobile && <OrbitingShapes />}
+          {!isMobile && <InteractiveStars />}
+          <WasmTerrain scrollP={scrollP} isMobile={isMobile} />
+          {!isMobile && floatItems.geoms.map((g, i) => (<FloatGeo key={i} geom={g} pos={floatItems.pos[i]} color={COLORS[i % COLORS.length]} speed={0.7 + i * 0.1} mf={0.4 + i * 0.07} scrollP={scrollP} />))}
+          {!isMobile && floatItems.solidGeoms.map((g, i) => (<FloatGeo key={`s${i}`} geom={g} pos={floatItems.solidPos[i]} color={COLORS[i + 1]} speed={0.5 + i * 0.1} mf={0.3} wire={false} scrollP={scrollP} />))}
         </>
       )}
     </>
