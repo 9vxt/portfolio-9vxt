@@ -56,7 +56,8 @@ export default function LoginScreen({ onLogin }) {
         </div>
         {ready && (
           <p className="text-[10px] font-mono text-[#475569] mt-4 animate-fadeIn">
-            Press <kbd className="px-1.5 py-0.5 rounded bg-[#1e293b] text-[#3b82f6] border border-[#334155] text-[9px]">Enter</kbd> to continue
+            Press <kbd className="px-1.5 py-0.5 rounded bg-[#1e293b] text-[#3b82f6] border border-[#334155] text-[9px]">Enter</kbd>
+            <button onClick={onLogin} className="ml-2 px-3 py-1 bg-[#3b82f6] text-[#080c14] text-xs font-mono font-semibold rounded hover:bg-[#2563eb] transition-all">_login</button>
           </p>
         )}
       </div>
