@@ -121,6 +121,22 @@ body {
 }
 .rainbow-hover:hover { animation: rainbow 2s linear infinite; }
 
+/* glitch visual flicker — applied alongside char scrambling */
+@keyframes glitchFlicker {
+  0%   { text-shadow: 0 0 2px #22d3ee, 0 0 4px rgba(34,211,238,0.3); transform: translate(0); }
+  25%  { text-shadow: -1px 0 #3b82f6, 1px 0 #22d3ee; transform: translate(-1px, 0.5px); }
+  50%  { text-shadow: 1px 0 #8b5cf6, -1px 0 #34d399; transform: translate(1px, -0.5px); }
+  75%  { text-shadow: -1px 0 #22d3ee, 1px 0 #3b82f6; transform: translate(-0.5px, 1px); }
+  100% { text-shadow: 0 0 2px #22d3ee; transform: translate(0); }
+}
+.glitch-flicker {
+  animation: glitchFlicker 0.2s ease-in-out 2;
+  transition: none;
+}
+.glitch-scramble {
+  transition: none;
+}
+
 section[id] {
   opacity: 0;
   transform: translateY(20px);

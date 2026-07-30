@@ -1,66 +1,124 @@
 import { useEffect, useRef } from 'react'
 
 const CHARS = '<>!@#$%^&*/\\|;:=+-_[]{}~?¡¿'
-const allTags = 'h1,h2,h3,h4,h5,h6,p,span,a,button,pre,li,td,th,label,strong,em,b,i,code,small'.split(',')
+const SAFE_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'a', 'button']
 
-function getAllTextEls() {
-  const els = []
-  for (const tag of allTags) {
-    els.push(...document.querySelectorAll(tag))
+function isExcluded(el) {
+  return el.closest('.no-glitch') || el.closest('[data-no-glitch]')
+}
+
+function pickElements(count) {
+  const pool = []
+  for (const tag of SAFE_TAGS) {
+    pool.push(...document.querySelectorAll(tag))
   }
-  return els
+  const picked = []
+  const seen = new Set()
+  for (let i = 0; i < count * 3 && picked.length < count; i++) {
+    const el = pool[Math.floor(Math.random() * pool.length)]
+    if (!el || seen.has(el) || isExcluded(el) || el.getAttribute('data-glitching') === '1') continue
+    // skip elements with no readable text
+    const txt = el.textContent || ''
+    if (txt.trim().length < 3) continue
+    seen.add(el)
+    picked.push(el)
+  }
+  return picked
+}
+
+function saveOriginal(el) {
+  if (!el.hasAttribute('data-original-text')) {
+    el.setAttribute('data-original-text', el.textContent || '')
+  }
+}
+
+function restore(el) {
+  const orig = el.getAttribute('data-original-text')
+  if (orig !== null && orig !== undefined) {
+    el.textContent = orig
+  }
+  el.removeAttribute('data-glitching')
+  el.classList.remove('glitch-scramble', 'glitch-flicker')
+}
+
+function scrambleChar(text) {
+  const chars = text.split('')
+  const idx = Math.floor(Math.random() * chars.length)
+  chars[idx] = CHARS[Math.floor(Math.random() * CHARS.length)]
+  return chars.join('')
+}
+
+function applyGlitch(el) {
+  saveOriginal(el)
+  el.setAttribute('data-glitching', '1')
+  el.classList.add('glitch-flicker')
+
+  // scramble a single char 3-4 frames at 50ms each
+  let frame = 0
+  const maxFrames = 3 + Math.floor(Math.random() * 2)
+  const interval = 40 + Math.floor(Math.random() * 20)
+
+  el.classList.add('glitch-scramble')
+
+  const id = setInterval(() => {
+    frame++
+    const txt = el.getAttribute('data-original-text') || ''
+    if (frame >= maxFrames) {
+      clearInterval(id)
+      restore(el)
+      return
+    }
+    // scramble 1-2 random chars
+    let result = txt
+    const count = 1 + Math.floor(Math.random() * 2)
+    for (let i = 0; i < count; i++) {
+      result = scrambleChar(result)
+    }
+    el.textContent = result
+  }, interval)
 }
 
 export default function GlobalGlitch({ enabled }) {
-  const intervalRef = useRef()
+  const timerRef = useRef()
+  const activeRef = useRef([])
 
   useEffect(() => {
+    // restore any leftover glitched elements
+    document.querySelectorAll('[data-glitching="1"]').forEach(restore)
+
     if (!enabled) {
-      document.querySelectorAll('.random-glitch, .glitch-scrambled').forEach(el => {
-        el.classList.remove('random-glitch', 'glitch-scrambled')
+      document.querySelectorAll('.glitch-flicker, .glitch-scramble').forEach(el => {
+        el.classList.remove('glitch-flicker', 'glitch-scramble')
       })
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+      document.querySelectorAll('[data-original-text]').forEach(el => {
+        restore(el)
+      })
       return
     }
 
-    const glitch = () => {
-      const els = getAllTextEls()
-      const count = Math.min(2 + Math.floor(Math.random() * 4), els.length)
-      const picked = new Set()
-      for (let i = 0; i < count; i++) {
-        let el
-        let tries = 0
-        do {
-          el = els[Math.floor(Math.random() * els.length)]
-          tries++
-        } while ((picked.has(el) || el.classList.contains('random-glitch') || el.closest('.no-glitch')) && tries < 20)
-        if (!el || el.classList.contains('random-glitch') || el.closest('.no-glitch')) continue
-        picked.add(el)
+    const schedule = () => {
+      if (!enabled) return
+      const delay = 3000 + Math.random() * 2000
+      timerRef.current = setTimeout(() => {
+        if (!enabled) return
+        // restore any stale glitches first
+        document.querySelectorAll('[data-glitching="1"]').forEach(restore)
 
-        if (Math.random() < 0.35) {
-          el.classList.add('random-glitch')
-          setTimeout(() => el.classList.remove('random-glitch'), 100 + Math.random() * 150)
-        } else {
-          const origText = el.textContent || ''
-          const words = origText.trim().split(/\s+/)
-          if (words.length < 2) continue
-          const wi = Math.floor(Math.random() * words.length)
-          const w = words[wi]
-          if (w.length < 2) continue
-          const chars = w.split('')
-          for (let ci = 0; ci < Math.min(2, chars.length); ci++) {
-            chars[Math.floor(Math.random() * chars.length)] = CHARS[Math.floor(Math.random() * CHARS.length)]
-          }
-          el.classList.add('glitch-scrambled')
-          const orig = el.textContent
-          el.textContent = words.join(' ')
-          setTimeout(() => { el.textContent = orig; el.classList.remove('glitch-scrambled') }, 200 + Math.random() * 250)
+        const count = 1 + Math.floor(Math.random() * 3)
+        const els = pickElements(count)
+        for (const el of els) {
+          applyGlitch(el)
         }
-      }
+        schedule()
+      }, delay)
     }
-    intervalRef.current = setInterval(glitch, 1800 + Math.random() * 1500)
-    return () => clearInterval(intervalRef.current)
+
+    schedule()
+
+    return () => {
+      clearTimeout(timerRef.current)
+      document.querySelectorAll('[data-glitching="1"]').forEach(restore)
+    }
   }, [enabled])
 
   return null
