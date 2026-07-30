@@ -26,7 +26,7 @@ export default function Footer() {
           </div>
         </div>
         <p className="text-[9px] font-mono text-[#1e293b] text-center mt-3">
-          ── built with {'<'}3 from a grade 10 engineer ──
+          ── built with brain from a grade 10 engineer ──
         </p>
       </div>
     </footer>

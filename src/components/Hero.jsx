@@ -31,7 +31,7 @@ const heroNames = [
   '9vxt',
   'Athibordee "Gust"',
   '>_ Athibordee',
-  'กัส',
+  'กัสดิ่วะ',
 ]
 
 function AnimatedName() {
@@ -73,7 +73,7 @@ function AnimatedName() {
 const subtitles = [
   'Embedded Systems Developer',
   'OS Framework Architect',
-  'Computer Engineering Student',
+  'I want to be a Computer Engineering Student',
   'Low-Level Programmer',
   'MIT Aspirant',
 ]

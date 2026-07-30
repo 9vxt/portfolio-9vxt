@@ -25,10 +25,16 @@ export default function LoginScreen({ onLogin }) {
       <div className="relative z-10 text-center">
         <div className="mb-6">
           <pre className="text-[#3b82f6] text-[8px] sm:text-[10px] leading-tight font-mono whitespace-pre">
-{` _  _  __   __   _  _  __    __
-/ )( \\/ _\\ (  ) / )( \\/ _\\  / _\\
-) __ (/    \\/ --\\\\ \\/ /    \\(  _)
-\\_)(_/\\_/\\_/\\____/\\_/\\_\\_/\\_/ \\___/`}
+{`░█████████                                          ░██ 
+░██     ░██                                         ░██ 
+░██     ░██ ░██    ░██  ░███████  ░██    ░██  ░████████ 
+░█████████  ░██    ░██ ░██    ░██ ░██    ░██ ░██    ░██ 
+░██   ░██   ░██    ░██ ░██        ░██    ░██ ░██    ░██ 
+░██    ░██  ░██   ░███ ░██    ░██ ░██   ░███ ░██   ░███ 
+░██     ░██  ░█████░██  ░███████   ░█████░██  ░█████░██ 
+                                         ░██            
+                                   ░███████             
+                                                        `}
           </pre>
         </div>
         <div className="eng-card px-8 py-6 inline-block">
@@ -37,7 +43,7 @@ export default function LoginScreen({ onLogin }) {
             <span className="text-[10px] font-mono text-[#64748b]">9vxt-login — secure shell</span>
           </div>
           <div className="font-mono text-left">
-            <p className="text-[#94a3b8] text-xs mb-2">archlinux login:</p>
+            <p className="text-[#94a3b8] text-xs mb-2">Rucyd Os login:</p>
             <p className="text-[#f1f5f9] text-sm">
               <span className="text-[#34d399]">$</span> 9vxt
             </p>

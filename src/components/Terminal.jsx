@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { playCommand } from './SoundEngine'
 import { shutdown } from '../lib/shutdown'
 
-const BANNER = `______     __      __        __  __                                  __                     
+const BANNER = `  ______     __      __        __  __                                  __                     
  /      \\   |  \\    |  \\      |  \\|  \\                                |  \\                    
 |  $$$$$$\\ _| $$_   | $$____   \\$$| $$____    ______    ______    ____| $$  ______    ______  
 | $$__| $$|   $$ \\  | $$    \\ |  \\| $$    \\  /      \\  /      \\  /      $$ /      \\  /      \\ 
