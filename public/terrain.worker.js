@@ -2,7 +2,7 @@ let wasm = null
 
 async function ensure() {
   if (wasm) return
-  const res = await fetch('./portfolio.wasm')
+  const res = await fetch('/wasm/portfolio.wasm')
   const { instance } = await WebAssembly.instantiate(await res.arrayBuffer(), { env: {} })
   wasm = instance.exports
 }

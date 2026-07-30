@@ -57,7 +57,7 @@ async function load() {
   if (wasmCache) return wasmCache
   if (loadErr) throw loadErr
   try {
-    const res = await fetch('./portfolio.wasm')
+    const res = await fetch('/wasm/portfolio.wasm')
     const { instance } = await WebAssembly.instantiate(await res.arrayBuffer(), {})
     wasmCache = instance.exports
     return wasmCache

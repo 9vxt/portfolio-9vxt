@@ -53,7 +53,7 @@ extern "C" {
 let wasmCache = null
 async function loadWasm() {
   if (wasmCache) return wasmCache
-  const res = await fetch('./solarsystem.wasm')
+  const res = await fetch('/wasm/solarsystem.wasm')
   const { instance } = await WebAssembly.instantiate(await res.arrayBuffer(), {})
   wasmCache = instance.exports
   wasmCache.init_solar()
