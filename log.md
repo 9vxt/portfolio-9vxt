@@ -6,207 +6,185 @@
 | File | Purpose |
 |------|---------|
 | `index.html` | Vite entry point, mounts `<div id="root">` |
-| `vite.config.js` | Vite config with React plugin |
-| `package.json` | Dependencies: React, Three.js (R3F), GSAP, Framer Motion, Tailwind |
-| `postcss.config.js` | PostCSS config for Tailwind |
-| `tailwind.config.js` | Tailwind theme extensions (fonts, colors) |
+| `vite.config.js` | Vite config with React plugin + Tailwind v4 |
+| `package.json` | Dependencies: React 19, Three.js (R3F), Framer Motion, Tailwind 4, Vite 8 |
+| `tsconfig.json` | TypeScript config (mixed .tsx/.jsx project) |
+| `.oxlintrc.json` | Lint config |
+| `.gitignore` | Ignores `node_modules`, `dist`; tracks `public/` |
+| `public/_headers` | Cloudflare Pages: COOP/COEP headers for WASM/WebGPU/SharedArrayBuffer |
+| `log.md` | This file |
+| `fix.md` | Earlier codebase audit |
 
 ### `src/`
-
 | File | Purpose |
 |------|---------|
 | `main.jsx` | ReactDOM.createRoot — renders `<App />` |
-| `App.jsx` | Root component: splash gate, 3D canvas background, section layout, FPS/scroll/cursor overlays, shutdown handler |
-| `index.css` | Global styles: Tailwind directives, `.eng-card` gradient border, `.blink` animation, `.glitch` hover, `circuit-bg` pattern |
+| `App.jsx` | Root: splash gate → login gate → main layout, 3D canvas background, overlay components, shutdown handler, `useIsMobile` gating |
+| `index.css` | Global styles: Tailwind, `.eng-card` gradient border, `.scanlines`, glitch keyframes, theme vars, section reveal |
 
 ### `src/components/`
-
 | File | Purpose |
 |------|---------|
-| `Navbar.jsx` | Fixed top nav with active section tracking, clock, mobile hamburger, GitHub link |
-| `Hero.jsx` | Hero section with GlitchText name, Terminal embed, scroll-down indicator |
-| `About.jsx` | Bio section with skill highlight cards (GSAP reveal) |
-| `Skills.jsx` | Progress bars with floating tags |
-| `Learning.jsx` | "Currently Learning" cards (left-right reveal) |
-| `Projects.jsx` | Project cards staggered with motion.div |
-| `ShowcaseWall.jsx` | Tech showcase grid with flip cards + featured projects |
-| `WasmDemo.jsx` | C++→WASM benchmark suite (fib, factorial, prime, count_primes) |
-| `WebGPUDemo.jsx` | Solar system simulation: C++ OOP (WASM) physics + WebGPU 3-pass rendering (procedural starfield/nebula background, orbital trails as line-strip, instanced planet quads with SDF circles + sun bloom), Canvas2D fallback |
-| `WasmTerrain.jsx` | R3F component: heightmap from C++ WASM worker, deformable plane |
-| `Scene3D.jsx` | R3F scene: icosahedron, torus spiral, floating geos, rings, shader particles, WASM terrain |
-| `Terminal.jsx` | CLI terminal: 18 commands, up/down history, tab-completion, sound |
-| `SplashScreen.jsx` | Boot sequence splash: 11-line boot log, ASCII banner, auto-dismiss after 6s |
-| `ShutdownScreen.jsx` | Shutdown animation: 9-line shutdown log, matrix rain, auto-close |
-| `SoundEngine.jsx` | Web Audio: ambient drone (4 oscillators), boot jingle (C-E-G-C-E), click blip, command beep, global click handler, auto-enable |
-| `GlitchText.jsx` | Hacker text effect: random char substitution, configurable interval/probability |
-| `TypeWriter.jsx` | Typewriter effect with cursor blink |
-| `ConfettiBurst.jsx` | Particle confetti burst (canvas-based) |
-| `CursorGlow.jsx` | Radial gradient that follows mouse |
-| `ScrollProgress.jsx` | Thin progress bar at top of viewport |
-| `FpsMonitor.jsx` | FPS counter display |
-| `GsapReveal.jsx` | GSAP scroll-triggered reveal wrapper |
+| `SplashScreen.jsx` | **Bootup screen**: particle canvas bg, ASCII banner, 11-line boot log, fake metrics, progress bar, press-any-key → login |
+| `LoginScreen.jsx` | 9vxt login gate: ASCII "9vxt" banner, password typing animation, Enter key or `_login` button (mobile) → main app |
+| `ShutdownScreen.jsx` | 9-line shutdown log, matrix-rain canvas, HALT sequence, auto window.close() |
+| `Scene3D.jsx` | R3F scene: shader icosahedron, rings, torus spiral, particles, WASM terrain, orbiting shapes. Delta-time animation + GPU disposal. Reduced on mobile |
+| `WasmTerrain.jsx` | R3F terrain plane deformed by C++ WASM worker heightmaps; wireframe + normals skipped on mobile |
+| `WebGPUDemo.jsx` | Solar system: C++ WASM physics + 3-pass WebGPU render (starfield bg, orbital trails, SDF planets), Canvas2D fallback |
+| `WasmDemo.jsx` | C++→WASM benchmark suite (fib, factorial, is_prime, count_primes) vs JS |
+| `Terminal.jsx` | CLI terminal: help, whoami, about, skills, projects, cat, echo, scroll, clock, uptime, solar, exit, easter eggs; history + tab-completion |
+| `Navbar.jsx` | Fixed nav with active-section tracking (IObserver), clock, status ticker, GitHub link, mobile hamburger |
+| `Hero.jsx` | Hero with GlitchText, animated name cycling, subtitle typewriter, Terminal embed, scroll indicator |
+| `About.jsx` | Bio section with highlight cards |
+| `Skills.jsx` | Progress-bar skill list with floating tags |
+| `Learning.jsx` | "Currently Learning" cards |
+| `Projects.jsx` | Featured project cards (ESP32 calc, Rucyd OS, DSP guitar) |
+| `ShowcaseWall.jsx` | Tech-stack flip cards (multi-flip Set) + featured project mini-cards |
+| `Contact.jsx` | Social links (GitHub, Instagram, LinkedIn, Email, Spotify, LINE) |
+| `Footer.jsx` | Copyright + credits |
+| `StatsCounter.jsx` | Animated stats counter |
+| `SectionReveal.jsx` | IObserver-driven section reveal (unobserves after first reveal) |
+| `SectionBreadcrumb.jsx` | Right-edge dot navigation with active-section tracking (IObserver) |
+| `SectionCounter.jsx` | Fixed "01 / 09" section counter (IObserver) |
+| `ScrollProgress.jsx` | Thin top progress bar (native scroll + rAF) |
+| `CursorGlow.jsx` | Mouse-follow radial glow (hidden on mobile) |
+| `ClickParticles.jsx` | Click burst particles, capped at 100 (hidden on mobile) |
+| `GlobalGlitch.jsx` | CSS-only text glitch on random DOM elements + `GlitchToggle` (hidden on mobile) |
+| `FpsMonitor.tsx` | FPS counter badge (hidden on mobile) |
+| `SoundEngine.jsx` | Web Audio: ambient drone, melody, boot/shutdown jingles, click blips, SoundToggle, suspend-on-hide |
+| `ThemeSwitcher.jsx` | cyber / matrix / synthwave themes via CSS vars, synchronous apply |
+| `KeyboardShortcuts.jsx` | `?` menu + g+key navigation (hidden on mobile) |
+| `ConsoleArt.jsx` | ASCII art printed to devtools console |
+| `DynamicTitle.jsx` | Rotating document title |
+| `Toast.jsx` | Toast notifications |
+| `ScrollToTop.jsx` | Scroll-to-top button |
+| `PingIndicator.jsx` | Cycling status pings (navbar) |
 | `ErrorBoundary.jsx` | React error boundary with fallback UI |
-| `Contact.jsx` | Contact section with social links + email |
-| `Footer.jsx` | Footer with copyright and credits |
 
 ### `src/hooks/`
-
 | File | Purpose |
 |------|---------|
-| `useOnScreen.js` | Intersection Observer hook for scroll visibility |
+| `useOnScreen.js` | IntersectionObserver scroll-visibility hook |
+| `useIsMobile.js` | Touch detection via `matchMedia('(pointer: coarse)')` |
 
 ### `src/lib/`
-
 | File | Purpose |
 |------|---------|
 | `shutdown.js` | Module-level shutdown event system (onShutdown/shutdown) |
 
 ### `public/`
-
 | File | Purpose |
 |------|---------|
-| `portfolio.wasm` | Compiled WASM: terrain generation, fib, factorial, prime benchmarks |
-| `solarsystem.wasm` | Compiled WASM: C++ OOP solar system (Vec2, Planet, SolarSystem classes) |
-| `terrain.worker.js` | Web Worker that loads portfolio.wasm, runs terrain generation off main thread |
+| `wasm/portfolio.wasm` | Compiled WASM: terrain gen, fib, factorial, prime benchmarks |
+| `wasm/solarsystem.wasm` | Compiled WASM: C++ OOP solar system |
+| `terrain.worker.js` | Web Worker loading portfolio.wasm off main thread |
+| `_headers` | Cloudflare COOP/COEP headers (`same-origin` / `require-corp`) |
 | `icons.svg` | SVG icons sprite |
 
 ### `wasm/`
-
 | File | Purpose |
 |------|---------|
-| `portfolio.cpp` | Source: terrain heightmap FBM, fib, factorial, is_prime, count_primes |
-| `solarsystem.cpp` | Source: Vec2, Planet class, SolarSystem class, N-body gravity |
+| `portfolio.cpp` | Source: terrain FBM, fib, factorial, is_prime, count_primes |
+| `solarsystem.cpp` | Source: Vec2, Planet, SolarSystem N-body classes |
+
+---
+
+## Boot Sequence
+
+```
+SplashScreen (boot log, 8s fallback)
+    ↓ press any key / click
+LoginScreen (types ••••••••, Enter or _login button)
+    ↓ onLogin
+Main app (Scene3D + sections + overlays)
+```
+
+- **Bootup screen file**: `src/components/SplashScreen.jsx`
 
 ---
 
 ## Bugs Found & Fixed
 
-### 1. WebGPU Black Screen — Random Lines
-- **File**: `src/components/WebGPUDemo.jsx`
-- **Root Cause**: WGSL vertex shader used `@group(1) @binding(0)` but JS set the render bind group at index 0.
-- **Fix**: Changed `@group(1)` → `@group(0)` to match the render pipeline's bind group layout.
-- **Bonus**: Rewrote entire component to show a solar system (9 bodies) instead of black hole accretion disk.
+### WebGPU Solar System (`WebGPUDemo.jsx`)
+1. **Bind group index mismatch** — WGSL `@group(1)` vs JS bind group 0 → changed to `@group(0)`.
+2. **Triangle topology** — `triangle-list` misrendered quads → switched to `triangle-strip`.
+3. **Aspect ratio** — aspect applied to center instead of quad offset → applied only to corner offset.
+4. **Per-planet colors** — color baked into `PlanetData` struct and passed via vertex shader.
+5. **C++ compile error** — `cb(cb)` wrong member name in `solarsystem.cpp` → `b(cb)`.
+6. **NaN physics explosion** — `G=10, M_sun=5000` produced infall→NaN → `G=1, M_sun=10`, correct orbital velocities `v=√(GM/r)`, dt clamped to 0.02s, softening + collision guard.
+7. **Clip-space off-screen** — Neptune x=3.6 exceeded NDC → `SimParams` uniform with `scale=0.25`.
+8. **Cross-instance triangles** — `draw(n*4,1)` created strips across planets → instanced rendering `draw(4, n)`.
+9. **Pac-Man wedge** — wrong quad corner order left a quadrant unrendered → explicit corner array `[(-1,-1),(1,-1),(-1,1),(1,1)]`.
 
-### 2. WebGPU Triangle Topology — Random Lines
-- **File**: `src/components/WebGPUDemo.jsx` (original WGSL vertex shader)
-- **Root Cause**: Render pipeline used `primitive: { topology: 'triangle-list' }`, but vertex shader emitted 4 vertices per quad. With `triangle-list`, every 3 consecutive vertices form a triangle, causing vertices 3-5 to span across particle boundaries.
-- **Fix**: Changed to `topology: 'triangle-strip'`, which correctly interprets vertices [0,1,2,3] as two triangles (0-1-2 and 1-2-3).
+### UI / Terminal
+10. **Tab completion exact match** — `find` matched current input → added `&& c !== input.toLowerCase()`.
+11. **Sound on first click** — `_enabled` started false → splash calls `enableSound()` before `playBoot()`.
+12. **Splash boot timing** — 300ms→200ms intervals, last line at ~2400ms, dismiss at 6-8s.
+13. **Login screen** — types password `••••••••`, shows 9vxt instantly, solid bg (no backdrop-blur), minimal 3D scene during login for 60fps.
+14. **Login mobile support** — added clickable `_login` button for devices without Enter key.
 
-### 3. WebGPU Aspect Ratio — Squashed Quads
-- **File**: `src/components/WebGPUDemo.jsx` (original WGSL vertex shader)
-- **Root Cause**: Aspect ratio was applied to the entire y coordinate `(py - sz) * aspect` instead of just the offset `py + oy * aspect`. This shifted particle centers vertically.
-- **Fix**: Applied aspect ratio only to the quad corner offset, not the center position.
-
-### 4. WebGPU Particle Coloring
-- **Original**: Color was a function of distance from center (black hole glow).
-- **Fix**: Each planet now has its own RGB color stored in the WGSL struct `PlanetData` and passed through the vertex shader.
-
-### 5. C++ WASM Compile Error
-- **File**: `wasm/solarsystem.cpp`
-- **Root Cause**: Constructor initializer list used `cb(cb)` but the member is named `b`, not `cb`.
-- **Fix**: Changed `cb(cb)` → `b(cb)`.
-
-### 6. Tab Completion — Exact Match Loop
-- **File**: `src/components/Terminal.jsx`
-- **Root Cause**: `Array.find` would match the current input exactly, causing tab completion to "select" the same string already typed.
-- **Fix**: Added filter condition `&& c !== input.toLowerCase()` to skip exact matches.
-
-### 7. Sound Not Playing on First Click
-- **File**: `src/components/SoundEngine.jsx`
-- **Cause**: Global click handler plays `playClick()` only when `_enabled` is true, but `_enabled` starts false.
-- **Resolution**: Splash screen calls `enableSound()` before playing boot jingle. Additionally, an auto-enable timer (5s) was added to SoundEngine as a fallback.
-
-### 9. WebGPU Black Screen — Physics Explosion (NaN from infall)
-- **File**: `wasm/solarsystem.cpp`
-- **Root Cause**: `G=10, M_sun=5000` with arbitrary `vy` values. Required orbital velocity at Earth (r=1.1) was `v = sqrt(50000/1.1) ≈ 213`, but code passed `vy=3.0`. Planet fell straight into the Sun, distance → 0, acceleration → infinity → NaN.
-- **Fix**: `G=1.0, M_sun=10.0`. Correct orbital velocities computed as `v = sqrt(G·M_sun/r)` in `init_solar()`. dt clamped to 0.02s in `step()`. Softening term (`dist² + 0.01`) and `minDist = radii sum` collision guard prevent singularities.
-
-### 10. WebGPU Black Screen — Clip Space Off-screen
-- **File**: `src/components/WebGPUDemo.jsx`
-- **Root Cause**: Planet coordinates up to x=3.6 (Neptune) far exceeded NDC [-1,1], rendering everything outside the viewport.
-- **Fix**: Added `SimParams` uniform buffer with `scale = 1.0/4.0 = 0.25` mapping world [-4,4] → NDC [-1,1]. WGSL vertex shader applies `p.pos * sim.scale` and `p.radius * sim.scale`.
-
-### 11. Stretched Triangles & Ribbon Shapes (Cross-Instance Triangles)
-- **File**: `src/components/WebGPUDemo.jsx`
-- **Root Cause**: `draw(maxPlanets*4, 1)` with `triangle-strip` topology. After planet N's quad (vertices 0-3), the GPU formed triangle (v2, v3, v0) connecting planet N+1's first vertex, creating enormous diagonal strips between distant planets.
-- **Fix**: Switched to instanced rendering `draw(4, maxPlanets, 0, 0)`. Each planet is an independent instance with 4 vertices forming one quad via `triangle-strip`. WebGPU never creates primitives across instance boundaries. Vertex shader uses `@builtin(instance_index)` for planet lookup and `@builtin(vertex_index)` for quad corner selection.
-
-### 13. Pac-Man Wedge — Incorrect Quad Vertex Order
-- **File**: `src/components/WebGPUDemo.jsx`
-- **Root Cause**: `select()`-based corner calculation produced vertices (-1,-1),(1,-1),(1,1),(-1,1). With `triangle-strip`, T1 covered right half, T2 covered top half, leaving the bottom-left quadrant unrendered (Pac-Man wedge).
-- **Fix**: Changed to explicit array `array<vec2f,4>(vec2f(-1,-1), vec2f(1,-1), vec2f(-1,1), vec2f(1,1))`. T1 covers triangle below diagonal, T2 covers above, full quad covered.
-
-### 14. Splash Screen Boot Order
-- **File**: `src/components/SplashScreen.jsx`
-- **Fix**: Boot line timings adjusted from 300ms to 200ms intervals for faster boot, last line appears at 2400ms, auto-dismiss at 6s.
+### Perf / Stability
+15. **Delta-based animation** — removed all modulo frame-skipping in `Scene3D` sub-components; all `useFrame` now use `(state, delta)` for constant speed at any refresh rate.
+16. **GPU memory leaks** — all geometries/materials created in `useMemo` and `.dispose()`d on unmount.
+17. **Layout thrashing** — `SectionBreadcrumb`/`SectionCounter` moved from `getBoundingClientRect`+rAF scroll to `IntersectionObserver`.
+18. **WASM memory invalidation** — WebGPU demo reads WASM memory via `.slice()` copy instead of live `Float32Array` views.
+19. **WasmDemo load failure** — `load()` now caches the error and fails fast instead of hanging.
+20. **ClickParticles cap** — capped at 100 active DOM particles.
+21. **Canvas dpr** — clamped to `min(devicePixelRatio, 2)` on the 3D Canvas and WebGPU demo canvas.
+22. **Login flash / dead UI** — theme applied synchronously in state initializer; disabled project buttons recolored to visible `#475569`.
 
 ---
 
 ## Features
 
+### Boot & Login
+- Boot splash with particle-field canvas, fake MEM/CPU/PROCS metrics, live clock, animated progress bar, press-any-key dismiss (8s fallback)
+- Login gate: "Rucyd Os login" ASCII banner, typed password, Enter key or `_login` button (mobile-friendly), minimal 3D terrain during login
+
 ### 3D Background
-- Persistent Three.js canvas behind all content (pointer-events: none)
-- Icosahedron with custom shader (scroll-responsive deformation, color shift, scale)
-- 7 floating geometric solids (torus knot, octahedron, dodecahedron, etc.) with mouse parallax
-- Torus spiral with mouse-reactive rotation
-- Ring system (3 elliptical wireframe rings)
-- 600-point starfield with scroll-responsive motion
-- WASM-generated terrain plane (deforms with scroll)
+- Persistent R3F canvas behind all content
+- Custom-shader icosahedron (scroll deformation, color shift, fresnel)
+- Ring system, torus spiral, floating solids, orbiting shapes, vertex-colored helix & stars
+- 600-point particle field (150 on mobile)
+- WASM worker-generated terrain plane (deforms with scroll)
+- Adaptive dpr, delta-time animation, full GPU resource disposal
 
 ### WASM Benchmark Suite
-- 4 benchmarks compare JS vs C++→WASM performance
-- Tests: fib(45), factorial(20), is_prime(1e7), count_primes(50000)
-- Real-time speedup ratio display with stacked bar chart
-- Source code viewer toggle
+- 4 benchmarks compare JS vs C++→WASM: fib(45), factorial(20), is_prime(1e7), count_primes(50000)
+- Real-time speedup ratio with stacked bar chart, source viewer toggle
 
 ### Solar System Simulation (C++ OOP + WASM)
-- 9-body N-body gravity simulation (G=1, M_sun=10, correct circular orbit velocities)
-- C++ classes: Vec2, Planet, SolarSystem
-- Compiled to WASM (6356 bytes), physics runs at ~60fps
-- **3-pass WebGPU rendering pipeline**:
-  - Pass 1 (Background): Full-screen triangle with procedural starfield (hash-based per-pixel stars with sine twinkle), 3-octave nebula gradient, and sun center glow
-  - Pass 2 (Trails): Instanced `line-strip` rendering of 40-point ring buffer per planet, age-based fade (0→1 oldest→newest), per-planet color tinting, additive blending
-  - Pass 3 (Planets): Instanced `triangle-strip` quads with SDF circle fragment shader, sun (instance 0) gets radial bloom `exp(-d²·3)·0.6`
-- Shared uniform buffer for scale=0.25, aspect=canvas.width/height, elapsed time
+- 9-body N-body gravity (G=1, M_sun=10, correct circular orbital velocities)
+- 3-pass WebGPU pipeline: procedural starfield/nebula bg, instanced line-strip orbital trails with age fade, instanced SDF planet quads with sun bloom
 - Canvas2D fallback when WebGPU unavailable
 
 ### CLI Terminal
-- 18 commands: whoami, about, skills, projects, contact, ls, cat, echo, date, pwd, banner, neofetch, sudo, 42, mit, wasm, solar, clear, exit, help
-- Up/down arrow command history
-- Tab auto-completion
-- Sound effects on command execution
+- Commands: help, whoami, about, skills, projects, contact, ls, cat, echo, date, clock, scroll, uptime, pwd, banner, neofetch, sudo, 42, mit, wasm, solar, clear, exit
+- Up/down history, tab auto-completion, copy-output button, sound effects
 
 ### Sound Engine (Web Audio API)
-- Ambient drone: 4 sine wave oscillators (55, 82.5, 110, 165 Hz) with LFO modulation
-- Boot jingle: C-E-G-C-E arpeggio (262, 330, 392, 523, 659 Hz)
-- Click sound: 1200Hz square wave blip (40ms)
-- Command sound: Dual-tone triangle wave (600+900Hz)
-- Global click handler — every click produces a blip
-- Auto-enable after 5 seconds if no interaction
-- Toggle button in bottom-left corner
-
-### Hacker Text Effects (GlitchText)
-- Periodic random character substitution (configurable interval/probability)
-- Auto-reverts to original text after 60ms
-- Used in Hero section for name display
-
-### Splash Screen
-- 11-line boot sequence with timestamps
-- ASCII banner (THONGBOONMA figlet)
-- Blinking cursor on "Press any key..."
-- Auto-dismiss after 6 seconds or on any keypress/click
-- Fade-out transition (600ms)
-
-### Shutdown Screen
-- 9-line shutdown log with timestamps
-- Matrix rain canvas animation (katakana characters)
-- Auto-closes after sequence completes
+- Ambient drone (4 oscillators + LFO), looping melody, boot/shutdown jingles
+- Click blips, command beeps, sound toggle button
+- AudioContext suspends on page hide (visibilitychange)
 
 ### Other Visual Effects
-- Cursor glow (radial gradient following mouse)
-- Scroll progress bar (top of viewport)
-- FPS monitor (bottom-right)
-- Confetti burst on scroll interactions
-- GSAP scroll-triggered reveals for about/skills cards
-- Gradient border animation on `.eng-card` hover
-- Circuit-board background pattern
+- Cursor glow, click burst particles, global CSS text glitch
+- Theme switcher (cyber / matrix / synthwave), keyboard shortcuts menu
+- Scroll progress bar, section reveal, breadcrumb dots, section counter
+- Console ASCII art, dynamic page title, toast, scroll-to-top, ping indicator
+
+---
+
+## Deployment (Cloudflare Pages)
+
+- WASM files organized into `public/wasm/` so Vite copies them to `dist/wasm/`
+- `public/_headers` serves `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp` (enables SharedArrayBuffer / cross-origin isolation)
+- Fetch paths updated: `/wasm/portfolio.wasm`, `/wasm/solarsystem.wasm`
+
+## Mobile Optimizations
+
+- `useIsMobile` hook detects touch via `matchMedia('(pointer: coarse)')`
+- Scene3D: 600→150 particles, skips orbiting shapes / helix / stars / floating solids on mobile
+- WasmTerrain: terrain updates every 8 frames instead of 4, wireframe + normals + colors skipped
+- Desktop-only overlays hidden: CursorGlow, ClickParticles, GlobalGlitch, KeyboardShortcuts, FpsMonitor
+- WebGPU demo canvas dpr clamped to 2
