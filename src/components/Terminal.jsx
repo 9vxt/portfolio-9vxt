@@ -151,7 +151,7 @@ function projectHandler(args) {
 
 export default function Terminal({ className = '' }) {
   const [history, setHistory] = useState([
-    { text: BANNER, type: 'banner' },
+    //{ text: BANNER, type: 'banner' },
     { text: 'Portfolio terminal. Type "help" to start.', type: 'system' },
     { text: '', type: 'blank' },
   ])
