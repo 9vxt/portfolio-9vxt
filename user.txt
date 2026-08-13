@@ -1,4 +1,4 @@
-Name: Athibordee Thongboonma
+Name: 9vxt
 Nickname: Gust
 Age: 15y 9m
 Country: Thailand
@@ -11,7 +11,7 @@ i want to be <Computer Engineer>
 
 
 
-about me: {"Hi, I'm Gust (Athibordee Thongboonma). 
+about me: {"Hi, I'm Gust (9vxt). 
     A 15-year-old Computer Engineering enthusiast based in Thailand.
 
     I don't just write code; I like to know what happens at the silicon level. 
@@ -34,7 +34,7 @@ about me: {"Hi, I'm Gust (Athibordee Thongboonma).
 contact:
     ig "https://www.instagram.com/9vxt_fr/"
     github "https://github.com/9vxt"
-    linkedin "https://www.linkedin.com/in/athibordee-thongboonma-879194426/"
+    linkedin "https://www.linkedin.com/in/9vxt"
     Line id "qwertyuiop0246"
     Gmail "9vxt.fr@gmail.com"
     spotify "https://open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq"

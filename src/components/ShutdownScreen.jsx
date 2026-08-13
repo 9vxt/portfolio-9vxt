@@ -8,7 +8,7 @@ const lines = [
   'systemd: Stopping GPU compute pipeline...',
   'systemd: Stopping WASM terrain module...',
   'systemd: Stopping 3D renderer (R3F)...',
-  'kernel: Unmounting /home/athibordee/portfolio',
+  'kernel: Unmounting /home/9vxt/portfolio',
   'kernel: Flushing cursor glow buffer...',
   'kernel: HALT',
 ]

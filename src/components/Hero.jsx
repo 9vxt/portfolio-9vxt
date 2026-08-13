@@ -26,11 +26,11 @@ function GlitchText({ children }) {
 }
 
 const heroNames = [
-  'Athibordee\nThongboonma',
-  'Gust',
   '9vxt',
-  'Athibordee "Gust"',
-  '>_ Athibordee',
+  'Gust',
+  'dev 9vxt',
+  '9vxt "Gust"',
+  '>_ dev',
   'กัสดิ่วะ',
 ]
 

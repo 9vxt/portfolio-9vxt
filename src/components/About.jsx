@@ -175,7 +175,7 @@ export default function About() {
               <div className="w-40 h-40 mx-auto bg-[#0f172a] border-2 border-[#1e293b] flex items-center justify-center mb-3">
                 <span className="text-5xl font-mono text-[#3b82f6]/30">G</span>
               </div>
-              <p className="text-xs font-mono text-[#f1f5f9]">Athibordee "Gust" Thongboonma</p>
+              <p className="text-xs font-mono text-[#f1f5f9]">9vxt "Gust"</p>
               <p className="text-[10px] font-mono text-[#64748b]">Grade 10 · Computer Engineering · Thailand</p>
               <div className="flex justify-center gap-3 mt-3 pt-3 border-t border-[#1e293b]">
                 <span className="text-[10px] text-[#475569] font-mono">C++</span>

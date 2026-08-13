@@ -14,7 +14,7 @@ const bootMessages = [
   'Boot device: NVMe 0.1               ',
   'Loading kernel 6.8.0-arch           ',
   'Starting systemd (PID 1)            ',
-  'Mounting /home/athibordee/portfolio ',
+  'Mounting /home/9vxt/portfolio       ',
   'Enabling networking — DHCP OK       ',
   'Starting 3D renderer (GLX/WGSL)     ',
   'Initializing audio (ALSA)           ',
@@ -228,7 +228,7 @@ export default function SplashScreen({ onFinish }) {
       </div>
 
       <p className="absolute bottom-3 text-[7px] font-mono text-[#1e293b] tracking-[0.2em]">
-        Athibordee Thongboonma · portfolio v1.0 · MIT 2026
+        dev 9vxt · portfolio v1.0 · MIT 2026
       </p>
     </div>
   )

@@ -26,7 +26,7 @@ Current section: ${current}
 Viewport: ${window.innerWidth}x${window.innerHeight}`
 }
 
-const aboutText = `Hi! I'm Gust (Athibordee Thongboonma).
+const aboutText = `Hi! I'm Gust (9vxt).
 I'm a 15-year-old Computer Engineering enthusiast from Thailand.
 Grade 10 @ Watkhienkhet School (Science-Math-Technology Program).
 
@@ -57,7 +57,7 @@ Type 'project 1' (or any number) for details.`
 
 const contactText = `  GitHub:    github.com/9vxt
   Instagram: instagram.com/9vxt_fr
-  LinkedIn:  linkedin.com/in/athibordee-thongboonma
+  LinkedIn:  linkedin.com/in/9vxt
   Email:     9vxt.fr@gmail.com
   Spotify:   open.spotify.com/user/31k3tzzxmyzsxg6tuwbmpeg43znq
   LINE:      qwertyuiop0246`
@@ -106,7 +106,7 @@ const commands = {
   help       — Show this message`,
     type: 'help'
   }),
-  whoami: () => ({ text: `9vxt\n  ────────────\n  Name: Athibordee Thongboonma\n  Grade: 10 · Watkhienkhet School\n  Status: 🚀 Building towards MIT`, type: 'output' }),
+  whoami: () => ({ text: `9vxt\n  ────────────\n  Name: Gust\n  Grade: 10 · Watkhienkhet School\n  Status: 🚀 Building towards MIT`, type: 'output' }),
   about: () => ({ text: aboutText, type: 'output' }),
   skills: () => ({ text: skillsText, type: 'output' }),
   projects: () => ({ text: projectsText, type: 'output' }),
@@ -208,7 +208,7 @@ export default function Terminal({ className = '' }) {
     if (line.type === 'blank') return <div key={i} className="h-2" />
     if (line.type === 'input') return (
       <p key={i} className="mb-0.5 text-xs">
-        <span className="text-[#3b82f6]">athibordee</span><span className="text-[#1e293b]">@</span><span className="text-[#22d3ee]">portfolio</span><span className="text-[#1e293b]">:</span><span className="text-[#8b5cf6]">~</span><span className="text-[#f1f5f9]">$ </span><span className="text-[#f1f5f9]">{line.text}</span>
+        <span className="text-[#3b82f6]">9vxt</span><span className="text-[#1e293b]">@</span><span className="text-[#22d3ee]">portfolio</span><span className="text-[#1e293b]">:</span><span className="text-[#8b5cf6]">~</span><span className="text-[#f1f5f9]">$ </span><span className="text-[#f1f5f9]">{line.text}</span>
       </p>
     )
     if (line.type === 'system') return <p key={i} className="text-[#22d3ee] text-xs mb-0.5">{'◆'} {line.text}</p>
@@ -235,7 +235,7 @@ export default function Terminal({ className = '' }) {
       <div className="p-4 h-56 sm:h-64 overflow-y-auto" ref={scrollRef}>
         {history.map((line, i) => renderLine(line, i))}
         <div className="flex items-center mt-1">
-          <span className="text-[#3b82f6] shrink-0 text-xs">athibordee</span><span className="text-[#1e293b] shrink-0 text-xs">@</span>
+          <span className="text-[#3b82f6] shrink-0 text-xs">9vxt</span><span className="text-[#1e293b] shrink-0 text-xs">@</span>
           <span className="text-[#22d3ee] shrink-0 text-xs">portfolio</span><span className="text-[#1e293b] shrink-0 text-xs">:</span>
           <span className="text-[#8b5cf6] shrink-0 text-xs">~</span><span className="text-[#f1f5f9] shrink-0 text-xs">$ </span>
           <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey}

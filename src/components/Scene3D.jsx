@@ -358,7 +358,7 @@ export default function Scene3D({ scrollP = 0, minimal = false, isMobile = false
     <>
       <ambientLight intensity={0.12} />
       <directionalLight position={[5, 5, 5]} intensity={0.3} />
-      <directionalLight position={[-5, -5, -5]} intensity={0.15} color="#3b82f6" />
+      <directionalLight position={[-5, -5, -5]} intensity={0.15} color="#3b82f5" />
       {minimal ? (
         <WasmTerrain scrollP={scrollP} isMobile={isMobile} />
       ) : (

@@ -14,8 +14,8 @@ const techs = [
 ]
 
 const projects = [
-  { name: 'ESP32-S3 Calculator', desc: 'Embedded calculator with dual-core ESP32-S3, Chorded Input System, Hybrid CAS/Non-CAS engine.', color: '#22d3ee' },
-  { name: 'Rucyd OS', desc: 'Linux NoMMU framework (<2MB) with Software-Defined Memory Validation & Gatekeeper API.', color: '#8b5cf6' },
+  { name: 'ESP32-S3 Super Calculator', desc: 'Embedded calculator with dual-core ESP32-S3, Chorded Input System, Hybrid CAS/Non-CAS engine.', color: '#22d3ee' },
+  { name: 'Rucyd OS (based on linux)', desc: 'Linux NoMMU framework (<2MB) with Software-Defined Memory Validation & Gatekeeper API.', color: '#8b5cf6' },
   { name: 'Guitar Multi-Effect', desc: 'R&D phase — real-time DSP audio processing on ESP32-S3 with low-latency I2S.', color: '#f59e0b' },
 ]
 

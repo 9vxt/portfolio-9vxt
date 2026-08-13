@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 
 const titles = [
-  'Athibordee · Portfolio',
-  '>_ Athibordee',
   '9vxt · dev',
+  '>_ dev',
+  'dev 9vxt · Portfolio',
   'Gust · portfolio',
-  'Athibordee Thongboonma',
+  '9vxt',
 ]
 
 export default function DynamicTitle() {
@@ -16,7 +16,7 @@ export default function DynamicTitle() {
       i++
     }, 3000)
     const handleVis = () => {
-      if (document.hidden) document.title = '💤 away · Athibordee'
+      if (document.hidden) document.title = '💤 away · 9vxt'
       else document.title = titles[0]
     }
     document.addEventListener('visibilitychange', handleVis)
